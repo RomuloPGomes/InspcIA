@@ -1,7 +1,14 @@
 // api/ia.js
 export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, OPTIONS');
     return res.status(405).send('Method Not Allowed');
   }
 
@@ -9,22 +16,20 @@ export default async function handler(req, res) {
     const { system, prompt, context } = req.body || {};
     if (!prompt) return res.status(400).send('missing prompt');
 
-    const userContent = `
-PROMPT DO USUÁRIO:
-${prompt}
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) return res.status(500).send('OPENAI_API_KEY not set');
 
-CONTEXTO (JSON):
-${JSON.stringify(context || {}, null, 2)}
-`.trim();
+    const userContent = `PROMPT DO USUÁRIO:\n${prompt}\n\nCONTEXTO (JSON):\n${JSON.stringify(context || {}, null, 2)}`;
 
-    const apiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Chamada à OpenAI com streaming SSE
+    const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.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}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // use o modelo que você tiver habilitado
+        model: 'gpt-4o-mini',
         stream: true,
         messages: [
           { role: 'system', content: system || 'Você é um assistente técnico.' },
@@ -33,22 +38,52 @@ ${JSON.stringify(context || {}, null, 2)}
       })
     });
 
-    if (!apiRes.ok || !apiRes.body) {
-      const errTxt = await apiRes.text();
-      return res.status(500).send(errTxt || 'erro na IA');
+    if (!upstream.ok || !upstream.body) {
+      const msg = await upstream.text().catch(() => 'OpenAI upstream error');
+      res.status(upstream.status || 500).send(msg);
+      return;
     }
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
-    for await (const chunk of apiRes.body) {
-      res.write(chunk);
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    // Converte SSE (data: {...}) -> apenas o texto (delta.content)
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop() || '';
+
+      for (const chunk of chunks) {
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const data = line.replace(/^data:\s*/, '');
+          if (data === '[DONE]') {
+            res.end();
+            return;
+          }
+          try {
+            const json = JSON.parse(data);
+            const delta = json?.choices?.[0]?.delta?.content || '';
+            if (delta) res.write(delta);
+          } catch (_) {
+            // ignora pedaços não-JSON
+          }
+        }
+      }
     }
     res.end();
-
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    console.error(err);
     res.status(500).send('server error');
   }
 }
