@@ -1,1440 +1,1596 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inspeção OAE - Sistema Offline</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3498db"/>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Inspeção OAE">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspeção OAE - Sistema Offline</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3498db"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Inspeção OAE">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height: 100vh; padding: 10px; }
+    .container { max-width: 450px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: linear-gradient(135deg,#2c3e50 0%,#3498db 100%); color: white; padding: 20px; text-align: center; position: relative; }
+    .header h1 { font-size: 1.8em; margin-bottom: 5px; position: relative; z-index: 1; }
+    .header p { opacity: 0.9; position: relative; z-index: 1; }
+    #openAiBtn { position:absolute; right:12px; top:12px; background:#e8f4f8; color:#0d6efd; border:none; border-radius:20px; padding:6px 12px; cursor:pointer; font-weight:600; }
 
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
-        .container { max-width: 450px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding: 20px; text-align: center; position: relative; }
-        .header h1 { font-size: 1.8em; margin-bottom: 5px; position: relative; z-index: 1; }
-        .header p { opacity: 0.9; position: relative; z-index: 1; }
+    .main-content { padding: 20px; max-height: 80vh; overflow-y: auto; }
+    .section { margin-bottom: 25px; padding: 20px; border-radius: 15px; background:#f8f9fa; border-left: 4px solid #3498db; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .section-header h3 { margin-bottom: 0; color:#2c3e50; font-size: 1.1em; display: flex; align-items: center; gap: 10px; }
 
-        /* Botão do Assistente IA no cabeçalho */
-        #openAiBtn { position:absolute; right:12px; top:12px; background:#e8f4f8; color:#0d6efd; border:none; border-radius:20px; padding:6px 12px; cursor:pointer; font-weight:600; }
+    .form-group { margin-bottom: 15px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display:block; margin-bottom: 5px; font-weight: 600; color:#495057; font-size: 14px; }
+    input, select, textarea { width:100%; padding:10px; border:2px solid #e9ecef; border-radius:8px; font-size:14px; transition: border-color .3s ease; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color:#3498db; box-shadow:0 0 0 3px rgba(52,152,219,.1); }
+    select { background: white; cursor: pointer; }
 
-        .main-content { padding: 20px; max-height: 80vh; overflow-y: auto; }
-        .section { margin-bottom: 25px; padding: 20px; border-radius: 15px; background: #f8f9fa; border-left: 4px solid #3498db; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .section-header h3 { margin-bottom: 0; color: #2c3e50; font-size: 1.1em; display: flex; align-items: center; gap: 10px; }
-        .form-group { margin-bottom: 15px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #495057; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 14px; transition: border-color 0.3s ease; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
-        select { background: white; cursor: pointer; }
-        .btn, .btn-primary, .btn-secondary, .btn-warning, .btn-filter, .btn-location { border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; padding: 12px 25px; font-size: 14px; text-align: center; }
-        .btn-primary { background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; width: 100%; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 16px; padding: 15px 30px; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3); }
-        .btn-secondary { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; margin-top: 10px; }
-        .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(231, 76, 60, 0.3); }
-        .btn-warning { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; margin-top: 10px; }
-        .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(243, 156, 18, 0.3); }
-        .btn-link { background: #e8f4f8; color: #3498db; text-decoration: none; }
-        .btn-link:hover { background: #d1e9f5; }
-        .btn-location { background: #9b59b6; color: white; width: 100%; margin-top: -10px; margin-bottom: 15px; }
-        .btn-location:hover { background: #8e44ad; }
-        .copy-coords { display: flex; gap: 10px; margin-bottom: 15px; }
-        .copy-coords input { background-color: #e9ecef; }
-        .copy-coords button { padding: 10px 15px; font-size: 12px; flex-shrink: 0; }
-        .filter-buttons { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
-        .btn-filter { padding: 5px 10px; font-size: 12px; background: #e9ecef; color: #495057; }
-        .btn-filter.active { background: #3498db; color: white; }
-        .registros-list { max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 10px; padding: 10px; margin-top: 15px; }
-        .registro-item { background: white; border: 1px solid #e9ecef; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .registro-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .registro-item-header h4 { color: #2c3e50; margin: 0; font-size: 16px; flex-grow: 1; }
-        .registro-item-actions button { font-size: 10px; padding: 4px 8px; margin-left: 4px; border-radius: 15px; flex-shrink: 0;}
-        .registro-item p { color: #6c757d; font-size: 13px; margin-bottom: 4px; }
-        .tabs { display: flex; background: #f8f9fa; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
-        .tab { flex: 1; padding: 15px; background: transparent; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s ease; color: #6c757d; }
-        .tab.active { background: #3498db; color: white; }
-        .tab:disabled { background-color: #e9ecef; color: #adb5bd; cursor: not-allowed; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .icon { font-size: 1.2em; }
-        .photo-info { background: #e8f4f8; padding: 15px; border-radius: 10px; border: 1px solid #3498db; margin-top: 15px; }
-        .photo-info p { color: #6c757d; font-size: 14px; text-align: center; font-weight: 500;}
-        .hidden { display: none; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 700px; border-radius: 10px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-header h2 { color: #2c3e50; }
-        .close-button { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-button:hover { color: black; }
-        .legenda-table { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 14px; }
-        .legenda-table table { width: 100%; border-collapse: collapse; }
-        .legenda-table th, .legenda-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .legenda-table th { background-color: #f2f2f2; font-weight: 600; }
-        .footer { text-align: center; padding: 15px; background-color: #f8f9fa; border-top: 1px solid #eee; }
-        .footer p { color: #888; font-size: 12px; }
+    .btn, .btn-primary, .btn-secondary, .btn-warning, .btn-filter, .btn-location { border-radius:50px; font-weight:600; cursor:pointer; transition: all .3s ease; border:none; padding:12px 25px; font-size:14px; text-align:center; }
+    .btn-primary { background: linear-gradient(135deg,#27ae60,#2ecc71); color:white; width:100%; margin-top:20px; text-transform: uppercase; letter-spacing:.5px; font-size:16px; padding:15px 30px; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow:0 10px 20px rgba(39,174,96,.3); }
+    .btn-secondary { background: linear-gradient(135deg,#e74c3c,#c0392b); color:white; margin-top:10px; }
+    .btn-secondary:hover { transform: translateY(-2px); box-shadow:0 8px 16px rgba(231,76,60,.3); }
+    .btn-warning { background: linear-gradient(135deg,#f39c12,#e67e22); color:white; margin-top:10px; }
+    .btn-warning:hover { transform: translateY(-2px); box-shadow:0 8px 16px rgba(243,156,18,.3); }
+    .btn-link { background:#e8f4f8; color:#3498db; text-decoration:none; }
+    .btn-link:hover { background:#d1e9f5; }
+    .btn-location { background:#9b59b6; color:white; width:100%; margin-top:-10px; margin-bottom:15px; }
+    .btn-location:hover { background:#8e44ad; }
 
-        /* ===== Estilos específicos do modal do Assistente IA ===== */
-        #aiModal .modal-content { max-width: 900px; }
-        #aiToolbar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 6px; }
-        .chip { border:1px solid #e5e7eb; background:#f9fafb; padding:6px 10px; border-radius:999px; cursor:pointer; font-size:13px; }
-        .chip:hover { background:#eef2ff; }
-        #aiPrompt { width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
-        #aiOutput { border:1px solid #e5e7eb; border-radius:10px; padding:12px; margin-top:10px; min-height:120px; white-space:pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
-        .row-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
-        .btn-ghost { background:#f3f4f6; border:none; padding:8px 14px; border-radius:999px; cursor:pointer; }
-        .btn-primary-mini { background:#2563eb; color:#fff; border:none; padding:8px 14px; border-radius:999px; cursor:pointer; }
-        .small { font-size:12px; color:#6b7280; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    .copy-coords { display:flex; gap:10px; margin-bottom:15px; }
+    .copy-coords input { background:#e9ecef; }
+    .copy-coords button { padding:10px 15px; font-size:12px; flex-shrink:0; }
+
+    .filter-buttons { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:15px; }
+    .btn-filter { padding:5px 10px; font-size:12px; background:#e9ecef; color:#495057; }
+    .btn-filter.active { background:#3498db; color:white; }
+
+    .registros-list { max-height: 400px; overflow-y:auto; border:1px solid #e9ecef; border-radius:10px; padding:10px; margin-top:15px; }
+    .registro-item { background:white; border:1px solid #e9ecef; border-radius:10px; padding:15px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,.05); }
+    .registro-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .registro-item-header h4 { color:#2c3e50; margin:0; font-size:16px; flex-grow:1; }
+    .registro-item-actions button { font-size:10px; padding:4px 8px; margin-left:4px; border-radius:15px; flex-shrink:0; }
+    .registro-item p { color:#6c757d; font-size:13px; margin-bottom:4px; }
+
+    .tabs { display:flex; background:#f8f9fa; border-radius:10px; margin-bottom:20px; overflow:hidden; }
+    .tab { flex:1; padding:15px; background:transparent; border:none; cursor:pointer; font-weight:600; transition: all .3s ease; color:#6c757d; }
+    .tab.active { background:#3498db; color:white; }
+    .tab:disabled { background-color:#e9ecef; color:#adb5bd; cursor:not-allowed; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .icon { font-size:1.2em; }
+    .photo-info { background:#e8f4f8; padding:15px; border-radius:10px; border:1px solid #3498db; margin-top:15px; }
+    .photo-info p { color:#6c757d; font-size:14px; text-align:center; font-weight:500; }
+
+    .hidden { display:none; }
+
+    .modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,.5); }
+    .modal-content { background:#fefefe; margin:10% auto; padding:20px; border:1px solid #888; width:90%; max-width:700px; border-radius:10px; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:15px; }
+    .modal-header h2 { color:#2c3e50; }
+    .close-button { color:#aaa; font-size:28px; font-weight:bold; cursor:pointer; }
+    .close-button:hover { color:black; }
+
+    .legenda-table { display:grid; grid-template-columns: 1fr 1fr; gap:20px; font-size:14px; }
+    .legenda-table table { width:100%; border-collapse:collapse; }
+    .legenda-table th, .legenda-table td { border:1px solid #ddd; padding:8px; text-align:left; }
+    .legenda-table th { background:#f2f2f2; font-weight:600; }
+
+    .footer { text-align:center; padding:15px; background:#f8f9fa; border-top:1px solid #eee; }
+    .footer p { color:#888; font-size:12px; }
+
+    /* Modal IA */
+    #aiModal .modal-content { max-width: 900px; }
+    #aiToolbar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 6px; }
+    .chip { border:1px solid #e5e7eb; background:#f9fafb; padding:6px 10px; border-radius:999px; cursor:pointer; font-size:13px; }
+    .chip:hover { background:#eef2ff; }
+    #aiPrompt { width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+    #aiOutput { border:1px solid #e5e7eb; border-radius:10px; padding:12px; margin-top:10px; min-height:120px; white-space:pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .row-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    .btn-ghost { background:#f3f4f6; border:none; padding:8px 14px; border-radius:999px; cursor:pointer; }
+    .btn-primary-mini { background:#2563eb; color:#fff; border:none; padding:8px 14px; border-radius:999px; cursor:pointer; }
+    .small { font-size:12px; color:#6b7280; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔍 Inspeção OAE</h1>
-            <p>Gerenciador Offline de Inspeções</p>
-            <!-- Botão para abrir o Assistente IA -->
-            <button id="openAiBtn" type="button">🤖 Assistente</button>
-
-            <div id="offlineIndicator" style="display: none; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; margin-top: 10px; font-size: 12px;">
-                📱 Funcionando Offline
-            </div>
-        </div>
-        <div class="main-content">
-            <div class="tabs">
-                <button class="tab active" data-tab="inspecoes" onclick="showTab('inspecoes', this)">Inspeções</button>
-                <button class="tab" data-tab="dados_gerais" onclick="showTab('dados_gerais', this)" disabled>Dados Gerais</button>
-                <button class="tab" data-tab="registros" onclick="showTab('registros', this)" disabled>Registros</button>
-                <button class="tab" data-tab="caracteristicas_gerais" onclick="showTab('caracteristicas_gerais', this)" disabled>Características Gerais</button>
-            </div>
-            <div id="inspecoes" class="tab-content active">
-                <div class="section">
-                    <div class="section-header">
-                        <h3><span class="icon">📂</span> Gerenciar Inspeção</h3>
-                    </div>
-                    <div class="form-group">
-                        <label for="inspecaoAtiva">Selecionar Inspeção:</label>
-                        <select id="inspecaoAtiva"></select>
-                    </div>
-                    <div class="form-row">
-                        <button type="button" class="btn btn-link" id="novaInspecaoBtn">➕ Nova Inspeção</button>
-                        <button type="button" class="btn btn-secondary" id="deletarInspecaoBtn">🗑️ Deletar Inspeção Ativa</button>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-header">
-                        <h3><span class="icon">📊</span> Importar/Exportar Dados</h3>
-                    </div>
-                    <div class="form-row">
-                        <button type="button" class="btn btn-link" id="downloadTemplateBtn">📥 Baixar Planilha Modelo</button>
-                        <button type="button" class="btn btn-link" id="importDataBtn">📤 Importar Planilha</button>
-                    </div>
-                    <div id="importStatus" class="form-group" style="display: none;">
-                        <p id="importMessage" style="color: #28a745; font-weight: 600; text-align: center; padding: 10px; background: #d4edda; border-radius: 8px;"></p>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-header">
-                        <h3><span class="icon">📋</span> Lista de Inspeções</h3>
-                    </div>
-                    <div id="inspecoesList" class="registros-list" style="max-height: 300px;">
-                        <p style="text-align:center; color:#6c757d; padding: 20px;">Nenhuma inspeção criada ainda.</p>
-                    </div>
-                </div>
-                <div class="section">
-                    <div class="section-header">
-                        <h3><span class="icon">🗑️</span> Limpar Todas as Inspeções</h3>
-                    </div>
-                    <div class="form-row">
-                        <button type="button" class="btn btn-secondary" id="deletarTudoBtn">🗑️ Deletar Todas as Inspeções</button>
-                    </div>
-                </div>
-            </div>
-            <div id="dados_gerais" class="tab-content">
-                 <div class="section">
-                    <div class="section-header"><h3><span class="icon">🏗️</span> Dados Gerais</h3></div>
-                    <div class="form-group"><label for="concessionaria">Nome da Concessionária:</label><input type="text" id="concessionaria" required></div>
-                    <div class="form-row"><div class="form-group"><label for="rodovia">Rodovia:</label><input type="text" id="rodovia" required></div><div class="form-group"><label for="km">km+m:</label><input type="text" id="km" required></div></div>
-                    <div class="form-row"><div class="form-group"><label for="latitude">Latitude:</label><input type="number" id="latitude" step="any" placeholder="-22.9068"></div><div class="form-group"><label for="longitude">Longitude:</label><input type="number" id="longitude" step="any" placeholder="-43.1729"></div></div>
-                    <button type="button" class="btn btn-location" id="getCoordsBtn">📍 Obter Coordenadas Atuais</button>
-                    <div id="copyCoordsContainer" class="copy-coords hidden"><input type="text" id="coordsForCopy" readonly><button type="button" id="copyCoordsBtn" class="btn btn-link">Copiar</button></div>
-                    <div class="form-group"><label for="nome_obra">Nome da Obra:</label><input type="text" id="nome_obra" required></div>
-                    <div class="form-row"><div class="form-group"><label for="sentido">Sentido Crescente:</label><select id="sentido" required><option value="">Selecione...</option><option value="Leste">Leste</option><option value="Oeste">Oeste</option><option value="Norte">Norte</option><option value="Sul">Sul</option></select></div><div class="form-group"><label for="data">Data da Inspeção:</label><input type="date" id="data" required></div></div>
-                    <div class="form-group"><label for="inspetor">Inspetor:</label><input type="text" id="inspetor" required></div>
-                </div>
-            </div>
-            <div id="registros" class="tab-content">
-                <form id="inspectionForm">
-                    <div class="section">
-                        <div class="section-header"><h3><span class="icon">➕</span> Novo Registro</h3></div>
-                        <div class="section">
-                            <div class="section-header"><h3><span class="icon">🔧</span> Elemento Inspecionado</h3><button type="button" class="btn btn-link" id="abrirModalLegendas">Consultar Legendas</button></div>
-                            <div class="form-group"><label for="elemento">Elemento:</label><select id="elemento" name="elemento" required><option value="">Selecione...</option><option value="FOTO CAPA PANORÂMICA">FOTO CAPA PANORÂMICA</option><option value="AA">AA</option><option value="AB">AB</option><option value="AC">AC</option><option value="AD">AD</option><option value="AL">AL</option><option value="ALE">ALE</option><option value="ALI">ALI</option><option value="AP">AP</option><option value="BÇ">BÇ</option><option value="BL">BL</option><option value="BLC">BLC</option><option value="BLOCO DE ANCORAGEM">BLOCO DE ANCORAGEM</option><option value="BR">BR</option><option value="BU">BU</option><option value="BUZ">BUZ</option><option value="BZ">BZ</option><option value="CABO DE PROTENSÃO">CABO DE PROTENSÃO</option><option value="CEL">CEL</option><option value="CO">CO</option><option value="DG">DG</option><option value="DI">DI</option><option value="DM">DM</option><option value="DR">DR</option><option value="EB">EB</option><option value="ENC">ENC</option><option value="ET">ET</option><option value="GC">GC</option><option value="GR">GR</option><option value="JANELA">JANELA</option><option value="JD">JD</option><option value="JUNTA JUSANTE">JUNTA JUSANTE</option><option value="L">L</option><option value="LB">LB</option><option value="LI">LI</option><option value="LS">LS</option><option value="LT">LT</option><option value="MF">MF</option><option value="MONTANTE">MONTANTE</option><option value="MT">MT</option><option value="P">P</option><option value="PA">PA</option><option value="PC">PC</option><option value="PF">PF</option><option value="PIL">PIL</option><option value="PINGADEIRA">PINGADEIRA</option><option value="PISTA">PISTA</option><option value="PLACA DE FECHAMENTO">PLACA DE FECHAMENTO</option><option value="PR">PR</option><option value="PS">PS</option><option value="RAMPA">RAMPA</option><option value="SAP">SAP</option><option value="SH-TACHAS REFLETIVAS">SH-TACHAS REFLETIVAS</option><option value="SJ">SJ</option><option value="SV-BARREIRAS">SV-BARREIRAS</option><option value="SV-GABARITO">SV-GABARITO</option><option value="TA">TA</option><option value="TESTEIRA">TESTEIRA</option><option value="TRAVESSIA">TRAVESSIA</option><option value="TRE">TRE</option><option value="TRECHO">TRECHO</option><option value="TUB">TUB</option><option value="TUBO ARMCO">TUBO ARMCO</option><option value="TUBULAÇÃO DE UTILIDADES">TUBULAÇÃO DE UTILIDADES</option><option value="V">V</option><option value="VA">VA</option><option value="VL">VL</option><option value="VLR">VLR</option><option value="VLT">VLT</option><option value="VT">VT</option><option value="VTR">VTR</option><option value="VTRAV">VTRAV</option><option value="FINAL DE INSPEÇÃO">FINAL DE INSPEÇÃO</option></select></div>
-                            <div class="form-row"><div class="form-group"><label for="numero_elemento">Número do Elemento:</label><input type="number" id="numero_elemento" name="numero_elemento" min="1" required></div><div class="form-group"><label for="vao">Vão (Opcional):</label><select id="vao" name="vao"><option value="">N/A</option><script>for(let i=1; i<=50; i++) { document.write(`<option value="Vão ${String(i).padStart(2, '0')}">Vão ${String(i).padStart(2, '0')}</option>`); }</script></select></div></div>
-                            <div class="form-row"><div class="form-group"><label for="face">Face (Opcional):</label><select id="face" name="face"><option value="">N/A</option><option value="Norte">Norte</option><option value="Sul">Sul</option><option value="Leste">Leste</option><option value="Oeste">Oeste</option><option value="Inferior">Inferior</option><option value="Superior">Superior</option><option value="Sob a Obra">Sob a Obra</option><option value="Sobre a Obra">Sobre a Obra</option></select></div><div class="form-group"><label for="vista">Vista (Opcional):</label><select id="vista" name="vista"><option value="">N/A</option><option value="Norte - Sul">Norte - Sul</option><option value="Sul - Norte">Sul - Norte</option><option value="Leste - Oeste">Leste - Oeste</option><option value="Oeste - Leste">Oeste - Leste</option></select></div></div>
-                        </div>
-                        <div class="section">
-                            <div class="section-header"><h3><span class="icon">⚠️</span> Anomalias</h3></div>
-                            <div class="filter-buttons" id="anomalia-filters"><button type="button" class="btn-filter active" data-category="todos">Todos</button><button type="button" class="btn-filter" data-category="concreto">Concreto</button><button type="button" class="btn-filter" data-category="metalica">Metálicas</button><button type="button" class="btn-filter" data-category="pavimentacao">Pavim.</button><button type="button" class="btn-filter" data-category="apoios">Apoios</button></div>
-                            <div class="form-group"><label for="anomalia">Anomalia (Opcional):</label><select id="anomalia" name="anomalia"><option value="">Selecione...</option><optgroup label="1. CONCRETO"><option data-category="concreto" value="1.1">1.1 - Manchas de umidade</option><option data-category="concreto" value="1.2">1.2 - Manchas de umidade ativa</option><option data-category="concreto" value="1.3">1.3 - Eflorescência</option><option data-category="concreto" value="1.4">1.4 - Estalactites</option><option data-category="concreto" value="1.5">1.5 - Concreto disgregado</option><option data-category="concreto" value="1.5-1.17">1.5-1.17 - Concreto disgregado com Armadura Exposta</option><option data-category="concreto" value="1.6">1.6 - Concreto segregado</option><option data-category="concreto" value="1.6-1.17">1.6-1.17 - Concreto segregado com Armadura Exposta</option><option data-category="concreto" value="1.7">1.7 - Concreto desagregado</option><option data-category="concreto" value="1.7-1.17">1.7-1.17 - Concreto desagregado com Armadura Exposta</option><option data-category="concreto" value="1.8">1.8 - Redução de cobrimento</option><option data-category="concreto" value="1.9">1.9 - Fissuras horizontais</option><option data-category="concreto" value="1.10">1.10 - Fissuras verticais</option><option data-category="concreto" value="1.11">1.11 - Fissuras diagonais</option><option data-category="concreto" value="1.12">1.12 - Fissuras mapeadas</option><option data-category="concreto" value="1.13">1.13 - Trincas (&gt;0,5 mm)</option><option data-category="concreto" value="1.14">1.14 - Reparos locais inadequados</option><option data-category="concreto" value="1.15">1.15 - Fora de prumo</option><option data-category="concreto" value="1.16">1.16 - Desplacamento</option><option data-category="concreto" value="1.16-1.17">1.16-1.17 - Desplacamento com Armadura Exposta</option><option data-category="concreto" value="1.17">1.17 - Armadura exposta</option><option data-category="concreto" value="1.18">1.18 - Manchas enegrecidas</option><option data-category="concreto" value="1.19">1.19 - Incidência de vegetação</option><option data-category="concreto" value="1.20">1.20 - Deslocamento linear ou angular</option><option data-category="concreto" value="1.21">1.21 - Resto de forma</option><option data-category="concreto" value="1.22">1.22 - Drenos de injeção não arrematados</option><option data-category="concreto" value="1.23">1.23 - Falha no acabamento dos nichos de ancoragens das armaduras protendidas</option></optgroup><optgroup label="2. ESTRUTURAS METÁLICAS"><option data-category="metalica" value="2.1">2.1 - Falha de acabamento na soldagem</option><option data-category="metalica" value="2.2">2.2 - Corrosão</option><option data-category="metalica" value="2.3">2.3 - Empeno/Deformação</option><option data-category="metalica" value="2.4">2.4 - Falta de parafusos, porcas e arruelas</option><option data-category="metalica" value="2.5">2.5 - Falha de pintura</option><option data-category="metalica" value="2.6">2.6 - Trinca transpassante</option><option data-category="metalica" value="2.7">2.7 - Infiltração no parafuso</option><option data-category="metalica" value="2.8">2.8 - Oxidação</option><option data-category="metalica" value="2.9">2.9 - Buzinotes curtos, danificados ou ausentes</option><option data-category="metalica" value="2.10">2.10 - Calcinação</option></optgroup><optgroup label="3. PAVIMENTAÇÃO E SISTEMA VIÁRIO"><option data-category="pavimentacao" value="3.1">3.1 - Fuga de material, existência de erosão e indícios de instabilidade do talude</option><option data-category="pavimentacao" value="3.2">3.2 - Desgaste superficial, espessura excessiva, ondulações e cavidades no pavimento</option><option data-category="pavimentacao" value="3.3">3.3 - Deficiência e/ou ausência de sinalização horizontal, vertical e aérea</option><option data-category="pavimentacao" value="3.4">3.4 - Descontinuidade do greide</option><option data-category="pavimentacao" value="3.5">3.5 - Deficiência no sistema de drenagem</option><option data-category="pavimentacao" value="3.6">3.6 - Ausência de perfil de vedação na junta de dilatação</option><option data-category="pavimentacao" value="3.7">3.7 - Falta de estanqueidade na junta de dilatação</option><option data-category="pavimentacao" value="3.8">3.8 - Saliência ou depressão causando desconforto ao usuário ou impacto na obra</option><option data-category="pavimentacao" value="3.9">3.9 - Deterioração dos lábios poliméricos</option><option data-category="pavimentacao" value="3.10">3.10 - Deterioração dos berços na junta de dilatação</option><option data-category="pavimentacao" value="3.11">3.11 - Acúmulo de detritos na junta de dilatação</option><option data-category="pavimentacao" value="3.12">Perfil elastomérico com descolamento, rasgos ressecamento ou deslocamento</option><option data-category="pavimentacao" value="3.13">Abertura excessiva da junta de dilatação</option><option data-category="pavimentacao" value="3.14">Trincas</option><option data-category="pavimentacao" value="3.15">Fissuras</option><option data-category="pavimentacao" value="3.16">Panela</option><option data-category="pavimentacao" value="3.17">Exsudação</option><option data-category="pavimentacao" value="3.18">Defeitos nos trilhos (ondulações e desgastes)</option><option data-category="pavimentacao" value="3.19">Falha de adensamento do lastro</option><option data-category="pavimentacao" value="3.20">Dormentes soltos, ausentes ou danificados</option><option data-category="pavimentacao" value="3.21">Fixações danificadas</option><option data-category="pavimentacao" value="3.22">Trilhos desalinhados em região de junta</option><option data-category="pavimentacao" value="3.23">Espessura excessiva do lastro</option><option data-category="pavimentacao" value="3.24">Trincas tipo "couro de jacaré"</option><option data-category="pavimentacao" value="3.25">Dano em pavimento rígido</option></optgroup><optgroup label="4. APARELHOS DE APOIO"><option data-category="apoios" value="4.1">4.1 - Ausência de aparelho de apoio</option><option data-category="apoios" value="4.2">4.2 - Bloqueio</option><option data-category="apoios" value="4.3">4.3 - Posicionamento inadequado</option><option data-category="apoios" value="4.4">4.4 - Acúmulo de detritos, ocorrência de agentes agressivos</option><option data-category="apoios" value="4.5">4.5 - Ruptura</option><option data-category="apoios" value="4.6">4.6 - Fissuras</option><option data-category="apoios" value="4.7">4.7 - Trincas</option><option data-category="apoios" value="4.8">4.8 - Esmagamento</option><option data-category="apoios" value="4.9">4.9 - Deformações laterais excessivas</option><option data-category="apoios" value="4.10">4.10 - Deslocamentos</option><option data-category="apoios" value="4.11">4.11 - Distorção excessiva</option><option data-category="apoios" value="4.12">Peças de aço oxidadas e expostas</option><option data-category="apoios" value="4.13">Descolamento da fretagem</option><option data-category="apoios" value="4.14">Assentamento irregular com concentração de esforços</option><option data-category="apoios" value="4.15">Deterioração do berço de assentamento e de nivelamento superior</option></optgroup></select></div>
-                            <div class="form-row"><div class="form-group"><label for="comprimento">Comprimento (m):</label><input type="number" id="comprimento" name="comprimento" step="0.01" min="0"></div><div class="form-group"><label for="largura">Largura (m):</label><input type="number" id="largura" name="largura" step="0.01" min="0"></div></div>
-                            <div class="form-group"><label for="abertura">Abertura de Fissuras:</label><select id="abertura" name="abertura"><option value="">Selecione...</option><script> for(let i = 10; i <= 1000; i += 5) { let v = (i / 100).toFixed(2).replace('.', ','); document.write(`<option value="W${v}">W${v}</option>`); } </script></select></div>
-                        </div>
-                        <div class="section">
-                            <div class="section-header"><h3><span class="icon">📸</span> Controle de Fotos</h3></div>
-                            <div class="form-row"><div class="form-group"><label for="tipo_foto">Tipo de Foto:</label><select id="tipo_foto" name="tipo_foto"><option value="camera">Câmera</option><option value="drone">Drone</option></select></div><div class="form-group"><label for="qtdFotos">Quantidade:</label><input type="number" id="qtdFotos" name="qtdFotos" value="2" min="1"></div></div>
-                            <div id="contador_camera_group" class="form-group"><label for="fotoInicialCamera">Numeração Inicial (Câmera):</label><input type="number" id="fotoInicialCamera" min="1"></div>
-                            <div id="contador_drone_group" class="form-group hidden"><label for="fotoInicialDrone">Numeração Inicial (Drone):</label><input type="number" id="fotoInicialDrone" min="1"></div>
-                            <div class="photo-info"><p id="fotoInfo"></p></div><input type="hidden" id="fotoInicial" name="fotoInicial">
-                        </div>
-                        <div class="section">
-                            <div class="section-header"><h3><span class="icon">📝</span> Observações
-                                <button type="button" id="openAiFromObs" class="btn btn-link" style="margin-left:8px;">🧠 Preencher com IA</button>
-                            </h3></div>
-                            <div class="form-group"><label for="observacoes">Observações Adicionais:</label><textarea id="observacoes" name="observacoes" rows="3" placeholder="Descrição detalhada..."></textarea></div>
-                        </div>
-                        <button type="submit" id="submitBtn" class="btn btn-primary">💾 Salvar Registro</button>
-                        <button type="button" id="cancelEditBtn" class="btn btn-warning hidden">Cancelar Edição</button>
-                    </div>
-                </form>
-                <hr style="margin-top: 30px; border: 0; border-top: 1px solid #eee;">
-                <h3 style="text-align: center; color: #34495e; margin: 20px 0;">Registros da Inspeção Ativa</h3>
-                <div id="registrosList" class="registros-list"></div>
-                <button type="button" id="exportButton" class="btn btn-primary" style="background: linear-gradient(135deg, #3498db, #2980b9);">📄 Exportar Registros</button>
-            </div>
-            <div id="caracteristicas_gerais" class="tab-content">
-                <div class="section">
-                    <div class="section-header">
-                        <h3><span class="icon">🏗️</span> Características Gerais da Obra</h3>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="comprimento_total">Comprimento total (m):</label>
-                            <input type="number" id="comprimento_total" step="0.01" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="largura_total">Largura total (m):</label>
-                            <input type="number" id="largura_total" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="largura_util">Largura útil (m):</label>
-                            <input type="number" id="largura_util" step="0.01" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="sentido_crescente">Sentido crescente da rodovia:</label>
-                            <select id="sentido_crescente">
-                                <option value="">Selecione...</option>
-                                <option value="Norte">Norte</option>
-                                <option value="Sul">Sul</option>
-                                <option value="Leste">Leste</option>
-                                <option value="Oeste">Oeste</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="qtd_vaos">Quantidade de vãos:</label>
-                            <input type="number" id="qtd_vaos" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="pilares">Pilares:</label>
-                            <input type="text" id="pilares">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="juntas_dilatacao">Juntas de dilatação:</label>
-                            <input type="text" id="juntas_dilatacao">
-                        </div>
-                        <div class="form-group">
-                            <label for="vaos_tipo">Vãos-tipo (isostático, contínuo):</label>
-                            <input type="text" id="vaos_tipo">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="tabuleiro_tipo">Tabuleiro-tipo:</label>
-                        <input type="text" id="tabuleiro_tipo">
-                    </div>
-                    <div class="form-group">
-                        <label for="tipologia_longitudinal">Tipologia longitudinal (Superestrutura):</label>
-                        <select id="tipologia_longitudinal">
-                            <option value="">Selecione...</option>
-                            <option value="Biapoiado">Biapoiado</option>
-                            <option value="Isostática">Isostática</option>
-                            <option value="Contínua">Contínua</option>
-                            <option value="Vão apoiado em consolo ou dente Gerber">Vão apoiado em consolo ou dente Gerber</option>
-                            <option value="Arco superior">Arco superior</option>
-                            <option value="Arco intermediário">Arco intermediário</option>
-                            <option value="Arco inferior">Arco inferior</option>
-                            <option value="Pórtico">Pórtico</option>
-                            <option value="Estaiada">Estaiada</option>
-                            <option value="Pênsil">Pênsil</option>
-                            <option value="Treliça">Treliça</option>
-                            <option value="Outra">Outra</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="tipologia_transversal">Tipologia transversal (Superestrutura):</label>
-                        <select id="tipologia_transversal">
-                            <option value="">Selecione...</option>
-                            <option value="Laje">Laje</option>
-                            <option value="Duas vigas">Duas vigas</option>
-                            <option value="Grelha">Grelha</option>
-                            <option value="Seção celular">Seção celular</option>
-                            <option value="Treliça">Treliça</option>
-                            <option value="Outras">Outras</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="tipologia_mesoestrutura">Tipologia da mesoestrutura:</label>
-                        <select id="tipologia_mesoestrutura">
-                            <option value="">Selecione...</option>
-                            <option value="Pilares isolados">Pilares isolados</option>
-                            <option value="Pilares com travessa">Pilares com travessa</option>
-                            <option value="Pilares contraventados">Pilares contraventados</option>
-                            <option value="Pilares parede">Pilares parede</option>
-                            <option value="Pilones">Pilones</option>
-                            <option value="Outras">Outras</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="tipologia_infraestrutura">Tipologia da infraestrutura:</label>
-                        <select id="tipologia_infraestrutura">
-                            <option value="">Selecione...</option>
-                            <option value="Fundação superficial">Fundação superficial</option>
-                            <option value="Tubulões">Tubulões</option>
-                            <option value="Estaca escavada">Estaca escavada</option>
-                            <option value="Estaca pré-moldada">Estaca pré-moldada</option>
-                            <option value="Estaca metálica">Estaca metálica</option>
-                            <option value="Estaca de madeira">Estaca de madeira</option>
-                            <option value="Não identificado">Não identificado</option>
-                            <option value="Outras">Outras</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="sistemas_construtivos">Sistemas construtivos:</label>
-                        <select id="sistemas_construtivos">
-                            <option value="">Selecione...</option>
-                            <option value="Moldado no local">Moldado no local</option>
-                            <option value="Pré-moldado somente armado">Pré-moldado somente armado</option>
-                            <option value="Pré-moldado protendido (pós-tensão)">Pré-moldado protendido (pós-tensão)</option>
-                            <option value="Pré-moldado protendido (pré-tensão)">Pré-moldado protendido (pré-tensão)</option>
-                            <option value="Balanço sucessivo">Balanço sucessivo</option>
-                            <option value="Aduelas pré-moldadas">Aduelas pré-moldadas</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="natureza_transposicao">Natureza da transposição:</label>
-                        <select id="natureza_transposicao">
-                            <option value="">Selecione...</option>
-                            <option value="Superfície aquífera">Superfície aquífera</option>
-                            <option value="Rodovia">Rodovia</option>
-                            <option value="Ferrovia">Ferrovia</option>
-                            <option value="Vale">Vale</option>
-                            <option value="Grota">Grota</option>
-                            <option value="Contorno de encosta">Contorno de encosta</option>
-                            <option value="Via urbana">Via urbana</option>
-                            <option value="Via de pedestre">Via de pedestre</option>
-                            <option value="Outras">Outras</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="materiais">Materiais:</label>
-                        <select id="materiais">
-                            <option value="">Selecione...</option>
-                            <option value="Concreto simples (CS)">Concreto simples (CS)</option>
-                            <option value="Concreto armado (CA)">Concreto armado (CA)</option>
-                            <option value="Concreto protendido (CP)">Concreto protendido (CP)</option>
-                            <option value="Aço (A)">Aço (A)</option>
-                            <option value="Madeira (MD)">Madeira (MD)</option>
-                            <option value="Pedra argamassada (PA)">Pedra argamassada (PA)</option>
-                            <option value="Mista (MI)">Mista (MI)</option>
-                            <option value="Alvenaria (AL)">Alvenaria (AL)</option>
-                            <option value="Não identificado">Não identificado</option>
-                            <option value="Outros">Outros</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="qtd_aparelhos_apoio">Quantidade de aparelhos de apoio:</label>
-                            <input type="number" id="qtd_aparelhos_apoio" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="gabarito_vertical_sob">Gabarito vertical sob a OAE (m):</label>
-                            <input type="number" id="gabarito_vertical_sob" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="gabarito_vertical_sobre">Gabarito vertical sobre a OAE (m):</label>
-                            <input type="number" id="gabarito_vertical_sobre" step="0.01" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="gabarito_navegavel_altura">Gabarito navegável — Altura (m):</label>
-                            <input type="number" id="gabarito_navegavel_altura" step="0.01" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="gabarito_navegavel_largura">Gabarito navegável — Largura (m):</label>
-                            <input type="number" id="gabarito_navegavel_largura" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <!-- Botão para salvar Características Gerais -->
-                    <button type="button" id="salvarCaracteristicasBtn" class="btn btn-primary" style="margin-top:10px;">
-                        💾 Salvar Características
-                    </button>
-                </div>
-            </div>
-        </div>
-        <footer class="footer"><p>Desenvolvido por: João Rômulo Gomes</p></footer>
-    </div>
-    
-    <div id="legendaModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Legendas dos Elementos</h2>
-                <span class="close-button">&times;</span>
-            </div>
-            <div class="legenda-table">
-                <table>
-                    <tr><th>Sigla</th><th>Descrição</th></tr>
-                    <tr><td>AA</td><td>Aparelho de apoio</td></tr>
-                    <tr><td>AB</td><td>Abóbada</td></tr>
-                    <tr><td>AC</td><td>Acesso</td></tr>
-                    <tr><td>AD</td><td>Aduela</td></tr>
-                    <tr><td>AL</td><td>Muro de ala</td></tr>
-                    <tr><td>ALE</td><td>Alma externa (caixão)</td></tr>
-                    <tr><td>ALI</td><td>Alma interna (caixão)</td></tr>
-                    <tr><td>AP</td><td>Apoio</td></tr>
-                    <tr><td>BÇ</td><td>Berço</td></tr>
-                    <tr><td>BL</td><td>Balanço longitudinal</td></tr>
-                    <tr><td>BLC</td><td>Bloco de fundação</td></tr>
-                    <tr><td>BR</td><td>Barreira rígida</td></tr>
-                    <tr><td>BU</td><td>Bueiro</td></tr>
-                    <tr><td>BUZ</td><td>Buzinote</td></tr>
-                    <tr><td>BZ</td><td>Banzo</td></tr>
-                    <tr><td>CEL</td><td>Célula</td></tr>
-                    <tr><td>CO</td><td>Cortina</td></tr>
-                    <tr><td>DG</td><td>Dente gerber</td></tr>
-                    <tr><td>DI</td><td>Diagonal</td></tr>
-                    <tr><td>DM</td><td>Defensa metálica</td></tr>
-                    <tr><td>DR</td><td>Drenagem</td></tr>
-                    <tr><td>EB</td><td>Emboque</td></tr>
-                    <tr><td>ENC</td><td>Encontro</td></tr>
-                    <tr><td>ET</td><td>Estaca</td></tr>
-                    <tr><td>GC</td><td>Guarda-corpos</td></tr>
-                    <tr><td>GR</td><td>Guarda-rodas</td></tr>
-                    <tr><td>JD</td><td>Junta de dilatação</td></tr>
-                    <tr><td>LB</td><td>Laje em balanço (transversal)</td></tr>
-                </table>
-                <table>
-                    <tr><th>Sigla</th><th>Descrição</th></tr>
-                    <tr><td>LI</td><td>Laje inferior</td></tr>
-                    <tr><td>LS</td><td>Laje superior</td></tr>
-                    <tr><td>LT</td><td>Laje de transição</td></tr>
-                    <tr><td>MF</td><td>Meio-Fio</td></tr>
-                    <tr><td>MT</td><td>Montante</td></tr>
-                    <tr><td>P</td><td>Pilar</td></tr>
-                    <tr><td>PA</td><td>Parede</td></tr>
-                    <tr><td>PC</td><td>Piso de concreto</td></tr>
-                    <tr><td>PF</td><td>Pavimento fexível</td></tr>
-                    <tr><td>PIL</td><td>Pilone</td></tr>
-                    <tr><td>PR</td><td>Pavimento rígido</td></tr>
-                    <tr><td>PS</td><td>Passeio</td></tr>
-                    <tr><td>SAP</td><td>Sapata</td></tr>
-                    <tr><td>SH</td><td>Sinalização Horizontal</td></tr>
-                    <tr><td>SJ</td><td>Sarjeta</td></tr>
-                    <tr><td>SV</td><td>Sinalização Vertical</td></tr>
-                    <tr><td>TA</td><td>Talude</td></tr>
-                    <tr><td>TRE</td><td>Treliça</td></tr>
-                    <tr><td>TUB</td><td>Tubulão</td></tr>
-                    <tr><td>V</td><td>Vão</td></tr>
-                    <tr><td>VA</td><td>Valeta</td></tr>
-                    <tr><td>VL</td><td>Viga longarina</td></tr>
-                    <tr><td>VLR</td><td>Viga longarina de rampa</td></tr>
-                    <tr><td>VLT</td><td>Viga longarina de travessia</td></tr>
-                    <tr><td>VT</td><td>Viga transversina</td></tr>
-                    <tr><td>VTR</td><td>Viga travessa</td></tr>
-                    <tr><td>VTRAV</td><td>Viga de travamento</td></tr>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Inputs ocultos para importação de planilha -->
-    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
-    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
-    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const appState = { db: {}, activeInspecaoId: null, editingRecordId: null };
-            const inspectionForm = document.getElementById('inspectionForm');
-            const inspecaoAtivaSelect = document.getElementById('inspecaoAtiva');
-            const novaInspecaoBtn = document.getElementById('novaInspecaoBtn');
-            const deletarInspecaoBtn = document.getElementById('deletarInspecaoBtn');
-            const getCoordsBtn = document.getElementById('getCoordsBtn');
-            const copyCoordsContainer = document.getElementById('copyCoordsContainer');
-            const coordsForCopyInput = document.getElementById('coordsForCopy');
-            const copyCoordsBtn = document.getElementById('copyCoordsBtn');
-            const registrosList = document.getElementById('registrosList');
-            const exportButton = document.getElementById('exportButton');
-            // Inclui referência ao botão salvar Características
-            const salvarCaracteristicasBtn = document.getElementById('salvarCaracteristicasBtn');
-
-            // Campos de dados gerais e características gerais
-            const dadosGeraisFields = {
-                concessionaria: document.getElementById('concessionaria'),
-                rodovia: document.getElementById('rodovia'),
-                km: document.getElementById('km'),
-                nome_obra: document.getElementById('nome_obra'),
-                sentido: document.getElementById('sentido'),
-                data: document.getElementById('data'),
-                inspetor: document.getElementById('inspetor'),
-                latitude: document.getElementById('latitude'),
-                longitude: document.getElementById('longitude'),
-
-                // Campos adicionais das características gerais
-                comprimento_total: document.getElementById('comprimento_total'),
-                largura_total: document.getElementById('largura_total'),
-                largura_util: document.getElementById('largura_util'),
-                sentido_crescente: document.getElementById('sentido_crescente'),
-                qtd_vaos: document.getElementById('qtd_vaos'),
-                pilares: document.getElementById('pilares'),
-                juntas_dilatacao: document.getElementById('juntas_dilatacao'),
-                vaos_tipo: document.getElementById('vaos_tipo'),
-                tabuleiro_tipo: document.getElementById('tabuleiro_tipo'),
-                tipologia_longitudinal: document.getElementById('tipologia_longitudinal'),
-                tipologia_transversal: document.getElementById('tipologia_transversal'),
-                tipologia_mesoestrutura: document.getElementById('tipologia_mesoestrutura'),
-                tipologia_infraestrutura: document.getElementById('tipologia_infraestrutura'),
-                sistemas_construtivos: document.getElementById('sistemas_construtivos'),
-                natureza_transposicao: document.getElementById('natureza_transposicao'),
-                materiais: document.getElementById('materiais'),
-                qtd_aparelhos_apoio: document.getElementById('qtd_aparelhos_apoio'),
-                gabarito_vertical_sob: document.getElementById('gabarito_vertical_sob'),
-                gabarito_vertical_sobre: document.getElementById('gabarito_vertical_sobre'),
-                gabarito_navegavel_altura: document.getElementById('gabarito_navegavel_altura'),
-                gabarito_navegavel_largura: document.getElementById('gabarito_navegavel_largura')
-            };
-
-            const registroFields = { elemento: document.getElementById('elemento'), numero_elemento: document.getElementById('numero_elemento'), face: document.getElementById('face'), vao: document.getElementById('vao'), vista: document.getElementById('vista'), anomalia: document.getElementById('anomalia'), comprimento: document.getElementById('comprimento'), largura: document.getElementById('largura'), abertura: document.getElementById('abertura'), observacoes: document.getElementById('observacoes') };
-            const tipoFotoSelect = document.getElementById('tipo_foto');
-            const qtdFotosInput = document.getElementById('qtdFotos');
-            const fotoInicialCameraInput = document.getElementById('fotoInicialCamera');
-            const fotoInicialDroneInput = document.getElementById('fotoInicialDrone');
-            const fotoInicialHidden = document.getElementById('fotoInicial');
-            const fotoInfo = document.getElementById('fotoInfo');
-            const modal = document.getElementById('legendaModal');
-            const btnAbrirModal = document.getElementById('abrirModalLegendas');
-            const spanCloseModal = document.querySelector('.close-button');
-            const tabs = document.querySelectorAll('.tab');
-            const submitBtn = document.getElementById('submitBtn');
-            const cancelEditBtn = document.getElementById('cancelEditBtn');
-            const anomaliaSelect = document.getElementById('anomalia');
-            const anomaliaOptions = Array.from(anomaliaSelect.options);
-            const filterButtons = document.querySelectorAll('#anomalia-filters .btn-filter');
-
-            btnAbrirModal.onclick = () => { modal.style.display = "block"; };
-            spanCloseModal.onclick = () => { modal.style.display = "none"; };
-            window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
-
-            const filterAnomalias = (category) => {
-                anomaliaSelect.value = '';
-                anomaliaOptions.forEach(option => {
-                    if (option.value === '') { option.style.display = ''; return; }
-                    const optionCategory = option.dataset.category;
-                    option.style.display = (category === 'todos' || category === optionCategory) ? '' : 'none';
-                });
-                filterButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.category === category));
-            };
-            filterButtons.forEach(button => button.addEventListener('click', () => filterAnomalias(button.dataset.category)));
-
-            const loadDb = () => { appState.db = JSON.parse(localStorage.getItem('OAE_INSPECTIONS_DB')) || {}; };
-            const saveDb = () => { localStorage.setItem('OAE_INSPECTIONS_DB', JSON.stringify(appState.db)); };
-
-            const populateInspecaoSelector = () => {
-                inspecaoAtivaSelect.innerHTML = '';
-                const inspectionIds = Object.keys(appState.db).sort();
-                if (inspectionIds.length === 0) { 
-                    inspecaoAtivaSelect.innerHTML = '<option value="">Crie uma nova inspeção</option>'; 
-                    updateInspecoesList();
-                    return; 
-                }
-                inspectionIds.forEach(id => { 
-                    const option = document.createElement('option'); 
-                    option.value = id; 
-                    option.textContent = id; 
-                    inspecaoAtivaSelect.appendChild(option); 
-                });
-                updateInspecoesList();
-            };
-            
-            const updateInspecoesList = () => {
-                const inspecoesList = document.getElementById('inspecoesList');
-                const inspectionIds = Object.keys(appState.db).sort();
-                
-                if (inspectionIds.length === 0) {
-                    inspecoesList.innerHTML = '<p style="text-align:center; color:#6c757d; padding: 20px;">Nenhuma inspeção criada ainda.</p>';
-                    return;
-                }
-                
-                inspecoesList.innerHTML = '';
-                inspectionIds.forEach(id => {
-                    const inspecao = appState.db[id];
-                    const item = document.createElement('div');
-                    item.className = 'registro-item';
-                    item.innerHTML = `
-                        <div class="registro-item-header">
-                            <h4>${id}</h4>
-                            <div class="registro-item-actions">
-                                <button class="btn btn-link" onclick="selectInspecao('${id}')">📋</button>
-                                <button class="btn btn-secondary" onclick="deleteInspecao('${id}')">🗑️</button>
-                            </div>
-                        </div>
-                        <p><strong>Concessionária:</strong> ${inspecao.dadosGerais.concessionaria || 'Não informado'}</p>
-                        <p><strong>Obra:</strong> ${inspecao.dadosGerais.nome_obra || 'Não informado'}</p>
-                        <p><strong>Rodovia:</strong> ${inspecao.dadosGerais.rodovia || 'Não informado'}</p>
-                        <p><strong>KM:</strong> ${inspecao.dadosGerais.km || 'Não informado'}</p>
-                        <p><strong>Registros:</strong> ${inspecao.registros.length} item(s)</p>
-                    `;
-                    inspecoesList.appendChild(item);
-                });
-            };
-            
-            const updateTabStates = () => {
-                const hasActiveInspecao = !!appState.activeInspecaoId;
-                tabs.forEach(tab => { if (tab.dataset.tab !== 'inspecoes') tab.disabled = !hasActiveInspecao; });
-            };
-
-            const setActiveInspecao = (id) => {
-                appState.activeInspecaoId = id;
-                updateTabStates();
-                if(cancelEditBtn.offsetParent !== null) cancelEditBtn.click();
-                if (!id) {
-                    Object.values(dadosGeraisFields).forEach(field => field.value = '');
-                    dadosGeraisFields.data.value = new Date().toISOString().split('T')[0];
-                    loadRegistros([]);
-                    copyCoordsContainer.classList.add('hidden');
-                    return;
-                }
-                const inspecao = appState.db[id];
-                if (!inspecao) return;
-                
-                for (const key in inspecao.dadosGerais) { 
-                    if (dadosGeraisFields[key]) {
-                        dadosGeraisFields[key].value = inspecao.dadosGerais[key] || '';
-                    }
-                }
-                
-                if(inspecao.dadosGerais.latitude && inspecao.dadosGerais.longitude){
-                    coordsForCopyInput.value = `${inspecao.dadosGerais.latitude}, ${inspecao.dadosGerais.longitude}`;
-                    copyCoordsContainer.classList.remove('hidden');
-                } else {
-                    copyCoordsContainer.classList.add('hidden');
-                }
-                
-                fotoInicialCameraInput.value = inspecao.contadores.camera;
-                fotoInicialDroneInput.value = inspecao.contadores.drone;
-                toggleContadorInputs();
-                loadRegistros(inspecao.registros);
-            };
-
-            const saveActiveInspecaoData = () => {
-                if (!appState.activeInspecaoId) return;
-                const inspecao = appState.db[appState.activeInspecaoId];
-                if (!inspecao) return;
-                for (const key in dadosGeraisFields) { inspecao.dadosGerais[key] = dadosGeraisFields[key].value; }
-                saveDb();
-            };
-
-            const loadRegistros = (registros = []) => {
-                registrosList.innerHTML = '';
-                if (registros.length === 0) { registrosList.innerHTML = '<p style="text-align:center; color:#6c757d; padding: 20px;">Nenhum registro para esta inspeção.</p>'; return; }
-                registros.slice().reverse().forEach(registro => {
-                    const fotoFinal = parseInt(registro.fotoInicial) + parseInt(registro.qtdFotos) - 1;
-                    const item = document.createElement('div');
-                    item.className = 'registro-item';
-                    item.innerHTML = `<div class="registro-item-header"><h4>${registro.elemento} ${registro.numero_elemento}</h4><div class="registro-item-actions"><button class="btn btn-link" onclick="duplicateRegistro('${registro.id}')">📄</button><button class="btn btn-link" onclick="editRegistro('${registro.id}')">✏️</button><button class="btn btn-secondary" onclick="deleteRegistro('${registro.id}')">🗑️</button></div></div><p><strong>Anomalia:</strong> ${registro.anomalia}</p><p><strong>Fotos (${registro.tipo_foto}):</strong> ${registro.fotoInicial} a ${fotoFinal}</p>`;
-                    registrosList.appendChild(item);
-                });
-            };
-            
-            window.deleteRegistro = (id) => {
-                if (!appState.activeInspecaoId || !confirm('Tem certeza?')) return;
-                const inspecao = appState.db[appState.activeInspecaoId];
-                inspecao.registros = inspecao.registros.filter(r => r.id != id);
-                saveDb();
-                loadRegistros(inspecao.registros);
-            };
-            
-            window.selectInspecao = (id) => {
-                inspecaoAtivaSelect.value = id;
-                setActiveInspecao(id);
-                showTab('dados_gerais', document.querySelector('.tab[data-tab="dados_gerais"]'));
-            };
-            
-            window.deleteInspecao = (id) => {
-                if (!confirm(`Tem certeza que deseja DELETAR PERMANENTEMENTE a inspeção "${id}" e todos os seus registros?`)) return;
-                delete appState.db[id];
-                saveDb();
-                populateInspecaoSelector();
-                const firstInspecaoId = Object.keys(appState.db)[0] || null;
-                setActiveInspecao(firstInspecaoId);
-                if (firstInspecaoId) inspecaoAtivaSelect.value = firstInspecaoId;
-            };
-
-            const populateFormWithRecord = (id) => {
-                const inspecao = appState.db[appState.activeInspecaoId];
-                const record = inspecao.registros.find(r => r.id === id);
-                if (!record) return;
-                filterAnomalias('todos');
-                for(const key in registroFields) {
-                    if(key === 'anomalia'){
-                        const option = Array.from(anomaliaSelect.options).find(opt => opt.textContent === record.anomalia);
-                        anomaliaSelect.value = option ? option.value : "";
-                    } else if (record[key] !== undefined) {
-                        registroFields[key].value = record[key];
-                    }
-                }
-                tipoFotoSelect.value = record.tipo_foto;
-                qtdFotosInput.value = record.qtdFotos;
-                fotoInicialCameraInput.value = record.fotoInicial;
-                fotoInicialDroneInput.value = record.fotoInicial;
-                toggleContadorInputs();
-            };
-
-            window.editRegistro = (id) => {
-                appState.editingRecordId = id;
-                populateFormWithRecord(id);
-                submitBtn.textContent = '💾 Atualizar Registro';
-                cancelEditBtn.classList.remove('hidden');
-                showTab('registros', document.querySelector('.tab[data-tab="registros"]'));
-                inspectionForm.scrollIntoView({ behavior: 'smooth' });
-            };
-
-            window.duplicateRegistro = (id) => {
-                appState.editingRecordId = null;
-                const inspecao = appState.db[appState.activeInspecaoId];
-                const record = inspecao.registros.find(r => r.id === id);
-                if (!record) return;
-                populateFormWithRecord(id);
-                submitBtn.textContent = '💾 Salvar Registro';
-                cancelEditBtn.classList.add('hidden');
-                const tipoFoto = tipoFotoSelect.value;
-                if(tipoFoto === 'camera') fotoInicialCameraInput.value = inspecao.contadores.camera;
-                else fotoInicialDroneInput.value = inspecao.contadores.drone;
-                updatePhotoInfo();
-                inspectionForm.scrollIntoView({ behavior: 'smooth' });
-                alert("Registro duplicado. Altere o necessário e salve como um novo registro.");
-            };
-
-            cancelEditBtn.addEventListener('click', () => {
-                appState.editingRecordId = null;
-                submitBtn.textContent = '💾 Salvar Registro';
-                cancelEditBtn.classList.add('hidden');
-                inspectionForm.reset();
-                const inspecao = appState.db[appState.activeInspecaoId];
-                if(inspecao) {
-                    fotoInicialCameraInput.value = inspecao.contadores.camera;
-                    fotoInicialDroneInput.value = inspecao.contadores.drone;
-                }
-                toggleContadorInputs();
-            });
-
-            inspecaoAtivaSelect.addEventListener('change', () => {
-                saveActiveInspecaoData();
-                setActiveInspecao(inspecaoAtivaSelect.value);
-            });
-
-            novaInspecaoBtn.addEventListener('click', () => {
-                const rodovia = prompt("Digite a Rodovia (ex: BR-101):");
-                const km = prompt("Digite o KM (ex: 50+300):");
-                if (!rodovia || !km) return alert("Rodovia e KM são obrigatórios.");
-                const newId = `${rodovia.trim()}_${km.trim()}`.replace(/ /g, '_');
-                if (appState.db[newId]) return alert("Uma inspeção com essa Rodovia e KM já existe.");
-                appState.db[newId] = { dadosGerais: { rodovia, km, data: new Date().toISOString().split('T')[0], inspetor: '', concessionaria: '', nome_obra: '', sentido: '', latitude: '', longitude: '' }, contadores: { camera: 1, drone: 1 }, registros: [] };
-                saveDb();
-                populateInspecaoSelector();
-                inspecaoAtivaSelect.value = newId;
-                setActiveInspecao(newId);
-                alert(`Nova inspeção "${newId}" criada. Vá para a aba 'Dados Gerais' para preencher o resto das informações.`);
-                showTab('dados_gerais', document.querySelector('.tab[data-tab="dados_gerais"]'));
-            });
-
-            deletarInspecaoBtn.addEventListener('click', () => {
-                if (!appState.activeInspecaoId) return alert("Nenhuma inspeção selecionada.");
-                if (!confirm(`Tem certeza que deseja DELETAR PERMANENTEMENTE a inspeção "${appState.activeInspecaoId}" e todos os seus registros?`)) return;
-                delete appState.db[appState.activeInspecaoId];
-                saveDb();
-                populateInspecaoSelector();
-                const firstInspecaoId = Object.keys(appState.db)[0] || null;
-                setActiveInspecao(firstInspecaoId);
-                if (firstInspecaoId) inspecaoAtivaSelect.value = firstInspecaoId;
-            });
-            
-            // Salva campos de Características quando o usuário clica no botão
-            salvarCaracteristicasBtn.addEventListener('click', () => {
-                saveActiveInspecaoData();
-                alert('Características gerais salvas com sucesso!');
-            });
-
-            Object.values(dadosGeraisFields).forEach(field => field.addEventListener('blur', saveActiveInspecaoData));
-
-            getCoordsBtn.addEventListener('click', () => {
-                if (!("geolocation" in navigator)) { alert("Geolocalização não é suportada pelo seu navegador."); return; }
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        dadosGeraisFields.latitude.value = lat.toFixed(7);
-                        dadosGeraisFields.longitude.value = lon.toFixed(7);
-                        coordsForCopyInput.value = `${lat.toFixed(7)}, ${lon.toFixed(7)}`;
-                        copyCoordsContainer.classList.remove('hidden');
-                        saveActiveInspecaoData();
-                        alert('Coordenadas obtidas com sucesso!');
-                    },
-                    (error) => {
-                        let errorMsg = "Ocorreu um erro desconhecido.";
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED: errorMsg = "Permissão para acessar a localização foi negada."; break;
-                            case error.POSITION_UNAVAILABLE: errorMsg = "A informação de localização não está disponível."; break;
-                            case error.TIMEOUT: errorMsg = "A requisição para obter a localização expirou."; break;
-                        }
-                        alert(errorMsg);
-                    }
-                );
-            });
-
-            copyCoordsBtn.addEventListener('click', () => {
-                coordsForCopyInput.select();
-                document.execCommand('copy');
-                alert('Coordenadas copiadas para a área de transferência!');
-            });
-
-            const updatePhotoInfo = () => {
-                const tipoAtual = tipoFotoSelect.value;
-                const numInicial = (tipoAtual === 'camera') ? parseInt(fotoInicialCameraInput.value) : parseInt(fotoInicialDroneInput.value);
-                const qtd = parseInt(qtdFotosInput.value) || 0;
-                const numFinal = isNaN(numInicial) || isNaN(qtd) ? '' : numInicial + qtd - 1;
-                fotoInicialHidden.value = numInicial;
-                fotoInfo.textContent = `Fotos (${tipoAtual}): ${numInicial || '?'} a ${numFinal || '?'}`;
-            };
-
-            const toggleContadorInputs = () => {
-                document.getElementById('contador_camera_group').classList.toggle('hidden', tipoFotoSelect.value !== 'camera');
-                document.getElementById('contador_drone_group').classList.toggle('hidden', tipoFotoSelect.value !== 'drone');
-                updatePhotoInfo();
-            };
-            
-            tipoFotoSelect.addEventListener('change', toggleContadorInputs);
-            [qtdFotosInput, fotoInicialCameraInput, fotoInicialDroneInput].forEach(input => input.addEventListener('input', updatePhotoInfo));
-            
-            const updateContadorStorage = (tipo, valor) => {
-                if (!appState.activeInspecaoId) return;
-                const inspecao = appState.db[appState.activeInspecaoId];
-                if (inspecao && !appState.editingRecordId) { inspecao.contadores[tipo] = parseInt(valor) || 1; saveDb(); }
-            };
-            fotoInicialCameraInput.addEventListener('change', () => updateContadorStorage('camera', fotoInicialCameraInput.value));
-            fotoInicialDroneInput.addEventListener('change', () => updateContadorStorage('drone', fotoInicialDroneInput.value));
-
-            inspectionForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                if (!appState.activeInspecaoId) { alert("Nenhuma inspeção ativa. Crie ou selecione uma inspeção primeiro."); return; }
-                saveActiveInspecaoData();
-                const inspecao = appState.db[appState.activeInspecaoId];
-                const formData = new FormData(inspectionForm);
-                let newRecordData = {};
-                formData.forEach((value, key) => { newRecordData[key] = value; });
-
-                if (appState.editingRecordId) {
-                    const recordIndex = inspecao.registros.findIndex(r => r.id === appState.editingRecordId);
-                    if (recordIndex > -1) {
-                        const originalRecord = inspecao.registros[recordIndex];
-                        inspecao.registros[recordIndex] = { ...originalRecord, ...newRecordData };
-                        let anomaliaField = inspecao.registros[recordIndex].anomalia;
-                        if (!anomaliaField) { inspecao.registros[recordIndex].anomalia = "Foto Geral"; }
-                        else {
-                            const anomaliaOption = document.querySelector(`#anomalia option[value="${anomaliaField}"]`);
-                            if(anomaliaOption) inspecao.registros[recordIndex].anomalia = anomaliaOption.textContent;
-                        }
-                    }
-                    alert('Registro atualizado com sucesso!');
-                    cancelEditBtn.click();
-                } else {
-                    newRecordData.id = Date.now().toString();
-                    if (!newRecordData.anomalia) { newRecordData.anomalia = "Foto Geral"; }
-                    else {
-                        const anomaliaOption = document.querySelector(`#anomalia option[value="${newRecordData.anomalia}"]`);
-                        if(anomaliaOption) newRecordData.anomalia = anomaliaOption.textContent;
-                    }
-                    inspecao.registros.push(newRecordData);
-                    const tipoFoto = newRecordData.tipo_foto;
-                    const novoContador = parseInt(newRecordData.fotoInicial) + parseInt(newRecordData.qtdFotos);
-                    inspecao.contadores[tipoFoto] = novoContador;
-                    if (tipoFoto === 'camera') { fotoInicialCameraInput.value = novoContador; } else { fotoInicialDroneInput.value = novoContador; }
-                    alert('Registro salvo com sucesso!');
-                }
-                saveDb();
-                Object.values(registroFields).forEach(field => { if(field.tagName === 'SELECT') field.selectedIndex = 0; else field.value = ''; });
-                updatePhotoInfo();
-                loadRegistros(inspecao.registros);
-            });
-            
-            // Exportação com abas separadas
-            exportButton.addEventListener('click', () => {
-                if (!appState.activeInspecaoId) { 
-                    alert("Nenhuma inspeção ativa para exportar."); 
-                    return; 
-                }
-                const inspecao = appState.db[appState.activeInspecaoId];
-                const registros = inspecao.registros;
-                if (registros.length === 0) { 
-                    alert('Nenhum registro para exportar nesta inspeção.'); 
-                    return; 
-                }
-
-                // 1. Aba Dados Gerais
-                const dadosGeraisHeaders = [
-                    'Concessionária','Rodovia','KM','Latitude','Longitude',
-                    'Nome da Obra','Sentido','Data','Inspetor'
-                ];
-                const dadosGeraisData = [[
-                    inspecao.dadosGerais.concessionaria || '',
-                    inspecao.dadosGerais.rodovia || '',
-                    inspecao.dadosGerais.km || '',
-                    inspecao.dadosGerais.latitude || '',
-                    inspecao.dadosGerais.longitude || '',
-                    inspecao.dadosGerais.nome_obra || '',
-                    inspecao.dadosGerais.sentido || '',
-                    inspecao.dadosGerais.data || '',
-                    inspecao.dadosGerais.inspetor || ''
-                ]];
-                const wsDadosGerais = XLSX.utils.aoa_to_sheet([dadosGeraisHeaders, ...dadosGeraisData]);
-
-                // 2. Aba Características Gerais
-                const caracteristicasHeaders = [
-                    'Comprimento total (m)','Largura total (m)','Largura útil (m)','Sentido crescente',
-                    'Quantidade de vãos','Pilares','Juntas de dilatação','Vãos-tipo','Tabuleiro-tipo',
-                    'Tipologia longitudinal (Superestrutura)','Tipologia transversal (Superestrutura)',
-                    'Tipologia da mesoestrutura','Tipologia da infraestrutura',
-                    'Sistemas construtivos','Natureza da transposição','Materiais',
-                    'Quantidade de aparelhos de apoio','Gabarito vertical sob a OAE (m)',
-                    'Gabarito vertical sobre a OAE (m)',
-                    'Gabarito navegável — Altura (m)','Gabarito navegável — Largura (m)'
-                ];
-                const caracteristicasData = [[
-                    inspecao.dadosGerais.comprimento_total || '',
-                    inspecao.dadosGerais.largura_total || '',
-                    inspecao.dadosGerais.largura_util || '',
-                    inspecao.dadosGerais.sentido_crescente || '',
-                    inspecao.dadosGerais.qtd_vaos || '',
-                    inspecao.dadosGerais.pilares || '',
-                    inspecao.dadosGerais.juntas_dilatacao || '',
-                    inspecao.dadosGerais.vaos_tipo || '',
-                    inspecao.dadosGerais.tabuleiro_tipo || '',
-                    inspecao.dadosGerais.tipologia_longitudinal || '',
-                    inspecao.dadosGerais.tipologia_transversal || '',
-                    inspecao.dadosGerais.tipologia_mesoestrutura || '',
-                    inspecao.dadosGerais.tipologia_infraestrutura || '',
-                    inspecao.dadosGerais.sistemas_construtivos || '',
-                    inspecao.dadosGerais.natureza_transposicao || '',
-                    inspecao.dadosGerais.materiais || '',
-                    inspecao.dadosGerais.qtd_aparelhos_apoio || '',
-                    inspecao.dadosGerais.gabarito_vertical_sob || '',
-                    inspecao.dadosGerais.gabarito_vertical_sobre || '',
-                    inspecao.dadosGerais.gabarito_navegavel_altura || '',
-                    inspecao.dadosGerais.gabarito_navegavel_largura || ''
-                ]];
-                const wsCaracteristicas = XLSX.utils.aoa_to_sheet([caracteristicasHeaders, ...caracteristicasData]);
-
-                // 3. Aba Registros
-                const registrosHeaders = [
-                    'ID','Elemento','Número do Elemento','Face','Vão','Vista','Anomalia',
-                    'Comprimento (m)','Largura (m)','Abertura Fissura','Tipo de Foto',
-                    'Foto Inicial','Foto Final','Qtd Fotos','Observações'
-                ];
-                const registrosData = registros.map(r => {
-                    const fotoFinal = parseInt(r.fotoInicial) + parseInt(r.qtdFotos) - 1;
-                    return [
-                        r.id,
-                        r.elemento,
-                        r.numero_elemento,
-                        r.face,
-                        r.vao,
-                        r.vista,
-                        r.anomalia,
-                        r.comprimento || '',
-                        r.largura || '',
-                        r.abertura || '',
-                        r.tipo_foto,
-                        r.fotoInicial,
-                        fotoFinal,
-                        r.qtdFotos,
-                        (r.observacoes || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                    ];
-                });
-                const wsRegistros = XLSX.utils.aoa_to_sheet([registrosHeaders, ...registrosData]);
-
-                // Criar workbook e adicionar abas
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, wsDadosGerais, "Dados Gerais");
-                XLSX.utils.book_append_sheet(wb, wsCaracteristicas, "Características Gerais");
-                XLSX.utils.book_append_sheet(wb, wsRegistros, "Registros");
-
-                // Salvar arquivo
-                const nomeArquivo = `inspecao_${appState.activeInspecaoId}`.replace(/[^a-zA-Z0-9\-_]/g, '_');
-                XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
-            });
-
-            // Resto da importação e exportação do template...
-            const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
-            const importDataBtn = document.getElementById('importDataBtn');
-            const fileInput = document.getElementById('fileInput');
-            const importStatus = document.getElementById('importStatus');
-            const importMessage = document.getElementById('importMessage');
-
-            downloadTemplateBtn.addEventListener('click', () => {
-                const headers = ['Concessionária', 'Nome da Obra', 'Rodovia', 'KM+M'];
-                const sampleData = [
-                    ['Concessionária Exemplo', 'Obra Exemplo', 'BR-101', '50+300'],
-                    ['', '', '', ''], 
-                    ['', '', '', ''], 
-                    ['', '', '', ''], 
-                    ['', '', '', '']  
-                ];
-
-                const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Dados Gerais");
-                ws['!cols'] = [
-                    { width: 20 },
-                    { width: 25 },
-                    { width: 15 },
-                    { width: 15 }
-                ];
-                XLSX.writeFile(wb, 'modelo_dados_gerais.xlsx');
-            });
-
-            importDataBtn.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const sheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[sheetName];
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                        const expectedHeaders = ['Concessionária', 'Nome da Obra', 'Rodovia', 'KM+M'];
-                        const headers = jsonData[0];
-                        
-                        if (!headers || headers.length < 4) {
-                            showImportMessage('❌ Formato inválido. Use a planilha modelo.', 'error');
-                            return;
-                        }
-
-                        const isValidFormat = expectedHeaders.every((header, index) => 
-                            headers[index] && headers[index].toString().toLowerCase().includes(header.toLowerCase())
-                        );
-
-                        if (!isValidFormat) {
-                            showImportMessage('❌ Cabeçalhos inválidos. Use a planilha modelo.', 'error');
-                            return;
-                        }
-
-                        let importedCount = 0;
-                        let skippedCount = 0;
-
-                        for (let i = 1; i < jsonData.length; i++) {
-                            const row = jsonData[i];
-                            if (!row || row.length < 4) continue;
-
-                            const concessionaria = row[0] || '';
-                            const nomeObra = row[1] || '';
-                            const rodovia = row[2] || '';
-                            const km = row[3] || '';
-
-                            if (!rodovia || !km) {
-                                skippedCount++;
-                                continue;
-                            }
-
-                            const newId = `${rodovia.trim()}_${km.trim()}`.replace(/ /g, '_');
-                            if (appState.db[newId]) {
-                                skippedCount++;
-                                continue;
-                            }
-
-                            appState.db[newId] = {
-                                dadosGerais: {
-                                    concessionaria: concessionaria,
-                                    nome_obra: nomeObra,
-                                    rodovia: rodovia,
-                                    km: km,
-                                    data: new Date().toISOString().split('T')[0],
-                                    inspetor: '',
-                                    sentido: '',
-                                    latitude: '',
-                                    longitude: '',
-                                    comprimento_total: '',
-                                    largura_total: '',
-                                    largura_util: '',
-                                    sentido_crescente: '',
-                                    qtd_vaos: '',
-                                    pilares: '',
-                                    juntas_dilatacao: '',
-                                    vaos_tipo: '',
-                                    tabuleiro_tipo: '',
-                                    tipologia_longitudinal: '',
-                                    tipologia_transversal: '',
-                                    tipologia_mesoestrutura: '',
-                                    tipologia_infraestrutura: '',
-                                    sistemas_construtivos: '',
-                                    natureza_transposicao: '',
-                                    materiais: '',
-                                    qtd_aparelhos_apoio: '',
-                                    gabarito_vertical_sob: '',
-                                    gabarito_vertical_sobre: '',
-                                    gabarito_navegavel_altura: '',
-                                    gabarito_navegavel_largura: ''
-                                },
-                                contadores: { camera: 1, drone: 1 },
-                                registros: []
-                            };
-
-                            importedCount++;
-                        }
-
-                        saveDb();
-                        populateInspecaoSelector();
-                        
-                        if (importedCount > 0) {
-                            showImportMessage(`✅ ${importedCount} inspeção(ões) importada(s) com sucesso!${skippedCount > 0 ? ` ${skippedCount} linha(s) ignorada(s).` : ''}`, 'success');
-                            
-                            const importedIds = Object.keys(appState.db).filter(id => {
-                                const inspecao = appState.db[id];
-                                return inspecao.dadosGerais.rodovia && inspecao.dadosGerais.km;
-                            });
-                            
-                            if (importedIds.length > 0) {
-                                const firstImportedId = importedIds[0];
-                                inspecaoAtivaSelect.value = firstImportedId;
-                                setActiveInspecao(firstImportedId);
-                                showTab('dados_gerais', document.querySelector('.tab[data-tab="dados_gerais"]'));
-                            }
-                        } else {
-                            showImportMessage('⚠️ Nenhuma inspeção foi importada. Verifique os dados.', 'warning');
-                        }
-
-                        fileInput.value = '';
-
-                    } catch (error) {
-                        console.error('Erro ao importar:', error);
-                        showImportMessage('❌ Erro ao processar o arquivo. Verifique o formato.', 'error');
-                    }
-                };
-
-                reader.readAsArrayBuffer(file);
-            });
-
-            function showImportMessage(message, type) {
-                importMessage.textContent = message;
-                importMessage.style.color = type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : '#dc3545';
-                importMessage.style.background = type === 'success' ? '#d4edda' : type === 'warning' ? '#fff3cd' : '#f8d7da';
-                importStatus.style.display = 'block';
-                setTimeout(() => {
-                    importStatus.style.display = 'none';
-                }, 5000);
-            }
-
-            const initApp = () => {
-                loadDb();
-                populateInspecaoSelector();
-                const firstInspecaoId = Object.keys(appState.db)[0] || null;
-                if(firstInspecaoId) inspecaoAtivaSelect.value = firstInspecaoId;
-                setActiveInspecao(firstInspecaoId);
-            };
-
-            initApp();
-
-            const deletarTudoBtn = document.getElementById('deletarTudoBtn');
-            if (deletarTudoBtn) {
-                deletarTudoBtn.addEventListener('click', () => {
-                    if (confirm('Tem certeza que deseja DELETAR TODAS AS INSPEÇÕES? Esta ação é irreversível!')) {
-                        localStorage.removeItem('OAE_INSPECTIONS_DB');
-                        location.reload();
-                    }
-                });
-            }
-        });
-
-        function showTab(tabName, element) {
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            element.classList.add('active');
-        }
-    </script>
-
-    <!-- ===== Service Worker (mantido) ===== -->
-    <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js')
-      .then(function(registration) {
-        console.log('Service Worker registrado com sucesso:', registration.scope);
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              if (confirm('Uma nova versão do aplicativo está disponível. Deseja atualizar agora?')) {
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
-              }
-            }
-          });
-        });
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('Novo Service Worker assumiu controle');
-        });
-      })
-      .catch(function(err) {
-        console.log('Falha ao registrar o Service Worker:', err);
-      });
-  });
-}
-
-function checkOfflineStatus() {
-  const offlineIndicator = document.getElementById('offlineIndicator');
-  if (!navigator.onLine) {
-    console.log('Aplicativo funcionando offline');
-    if (offlineIndicator) {
-      offlineIndicator.style.display = 'block';
-    }
-  } else {
-    if (offlineIndicator) {
-      offlineIndicator.style.display = 'none';
-    }
-  }
-}
-
-window.addEventListener('online', () => {
-  console.log('Conexão restaurada');
-  const offlineIndicator = document.getElementById('offlineIndicator');
-  if (offlineIndicator) {
-    offlineIndicator.style.display = 'none';
-  }
-});
-
-window.addEventListener('offline', () => {
-  console.log('Aplicativo funcionando offline');
-  const offlineIndicator = document.getElementById('offlineIndicator');
-  if (offlineIndicator) {
-    offlineIndicator.style.display = 'block';
-  }
-});
-
-checkOfflineStatus();
-    </script>
-
-    <!-- ===== MODAL DO ASSISTENTE IA ===== -->
-    <div id="aiModal" class="modal" aria-hidden="true">
-      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
-        <div class="modal-header">
-          <h2 id="aiTitle">Assistente de IA — Inspeção OAE</h2>
-          <span class="close-button" id="closeAiModal" title="Fechar">&times;</span>
-        </div>
-
-        <div id="aiToolbar">
-          <span class="chip" data-template="obs">✍️ Gerar observação</span>
-          <span class="chip" data-template="diag">🧪 Diagnóstico curto</span>
-          <span class="chip" data-template="sug">🧠 Plano de ação</span>
-          <span class="chip" data-template="sum">📋 Resumo técnico</span>
-        </div>
-
-        <textarea id="aiPrompt" rows="5" placeholder="Escreva sua pergunta ou use os atalhos acima..."></textarea>
-        <div class="row-actions">
-          <button id="askAiBtn" class="btn-primary-mini">Perguntar com contexto</button>
-          <button id="pasteAiBtn" class="btn-ghost">📝 Inserir em Observações</button>
-          <button id="copyAiBtn" class="btn-ghost">📋 Copiar</button>
-          <span id="aiOnlineHint" class="small" style="margin-left:auto;"></span>
-        </div>
-
-        <div id="aiOutput" aria-live="polite"></div>
-        <div class="small">O contexto é coletado automaticamente de “Dados Gerais”, “Características” e do registro atual. Se estiver offline, a IA fica desativada.</div>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 Inspeção OAE</h1>
+      <p>Gerenciador Offline de Inspeções</p>
+      <button id="openAiBtn" type="button">🤖 Assistente</button>
+      <div id="offlineIndicator" style="display:none; background:rgba(255,255,255,.2); padding:5px 10px; border-radius:15px; margin-top:10px; font-size:12px;">
+        📱 Funcionando Offline
       </div>
     </div>
 
-    <!-- ===== Integração com IA ===== -->
-    <script>
-      (function(){
-        // Elementos do modal
-        const aiModal = document.getElementById('aiModal');
-        const openAiBtn = document.getElementById('openAiBtn');
-        const openAiFromObs = document.getElementById('openAiFromObs');
-        const closeAiModal = document.getElementById('closeAiModal');
-        const aiPrompt = document.getElementById('aiPrompt');
-        const aiOutput = document.getElementById('aiOutput');
-        const askAiBtn = document.getElementById('askAiBtn');
-        const copyAiBtn = document.getElementById('copyAiBtn');
-        const pasteAiBtn = document.getElementById('pasteAiBtn');
-        const aiOnlineHint = document.getElementById('aiOnlineHint');
+    <div class="main-content">
+      <div class="tabs">
+        <button class="tab active" data-tab="inspecoes" onclick="showTab('inspecoes', this)">Inspeções</button>
+        <button class="tab" data-tab="dados_gerais" onclick="showTab('dados_gerais', this)" disabled>Dados Gerais</button>
+        <button class="tab" data-tab="registros" onclick="showTab('registros', this)" disabled>Registros</button>
+        <button class="tab" data-tab="caracteristicas_gerais" onclick="showTab('caracteristicas_gerais', this)" disabled>Características Gerais</button>
+      </div>
 
-        // Abrir/fechar modal
-        const openModal = (prefill='') => {
-          aiPrompt.value = prefill;
-          aiOutput.textContent = '';
-          aiModal.style.display = 'block';
-          aiModal.setAttribute('aria-hidden', 'false');
-          updateOnlineHint();
-          toggleAskDisabled();
-        };
-        const closeModal = () => {
-          aiModal.style.display = 'none';
-          aiModal.setAttribute('aria-hidden', 'true');
-        };
+      <div id="inspecoes" class="tab-content active">
+        <div class="section">
+          <div class="section-header"><h3><span class="icon">📂</span> Gerenciar Inspeção</h3></div>
+          <div class="form-group">
+            <label for="inspecaoAtiva">Selecionar Inspeção:</label>
+            <select id="inspecaoAtiva"></select>
+          </div>
+          <div class="form-row">
+            <button type="button" class="btn btn-link" id="novaInspecaoBtn">➕ Nova Inspeção</button>
+            <button type="button" class="btn btn-secondary" id="deletarInspecaoBtn">🗑️ Deletar Inspeção Ativa</button>
+          </div>
+        </div>
 
-        openAiBtn && openAiBtn.addEventListener('click', () => openModal(''));
-        openAiFromObs && openAiFromObs.addEventListener('click', () => openModal(`Gerar uma OBSERVAÇÃO técnica (3–6 linhas) com base nos campos preenchidos.`));
-        closeAiModal && closeAiModal.addEventListener('click', closeModal);
-        aiModal && aiModal.addEventListener('click', (e) => { if (e.target === aiModal) closeModal(); });
+        <div class="section">
+          <div class="section-header"><h3><span class="icon">📊</span> Importar/Exportar Dados</h3></div>
+          <div class="form-row">
+            <button type="button" class="btn btn-link" id="downloadTemplateBtn">📥 Baixar Planilha Modelo</button>
+            <button type="button" class="btn btn-link" id="importDataBtn">📤 Importar Planilha</button>
+          </div>
+          <div id="importStatus" class="form-group" style="display:none;">
+            <p id="importMessage" style="color:#28a745; font-weight:600; text-align:center; padding:10px; background:#d4edda; border-radius:8px;"></p>
+          </div>
+        </div>
 
-        // Chips de prompts rápidos
-        document.querySelectorAll('#aiToolbar .chip').forEach(chip => {
-          chip.addEventListener('click', () => {
-            const t = chip.getAttribute('data-template');
-            let txt = '';
-            if (t === 'obs') {
-              txt = `Gerar OBSERVAÇÃO técnica (3–6 linhas) considerando: elemento/vão/face/vista, anomalia, severidade (se houver), breve causa provável e recomendação curta.`;
-            } else if (t === 'diag') {
-              txt = `Produzir DIAGNÓSTICO curto (4–8 linhas) descrevendo o quadro e possíveis implicações estrutrais, de acordo com a anomalia.`;
-            } else if (t === 'sug') {
-              txt = `Sugerir um PLANO DE AÇÃO objetivo (monitorar / corrigir / intervenção) e justificar em 2–3 pontos.`;
-            } else if (t === 'sum') {
-              txt = `Escrever um RESUMO técnico (até 8 linhas) consolidando dados gerais, características e registro atual.`;
-            }
-            aiPrompt.value = txt;
-          });
+        <div class="section">
+          <div class="section-header"><h3><span class="icon">📋</span> Lista de Inspeções</h3></div>
+          <div id="inspecoesList" class="registros-list" style="max-height:300px;">
+            <p style="text-align:center; color:#6c757d; padding:20px;">Nenhuma inspeção criada ainda.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header"><h3><span class="icon">🗑️</span> Limpar Todas as Inspeções</h3></div>
+          <div class="form-row">
+            <button type="button" class="btn btn-secondary" id="deletarTudoBtn">🗑️ Deletar Todas as Inspeções</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="dados_gerais" class="tab-content">
+        <div class="section">
+          <div class="section-header"><h3><span class="icon">🏗️</span> Dados Gerais</h3></div>
+          <div class="form-group"><label for="concessionaria">Nome da Concessionária:</label><input type="text" id="concessionaria" required></div>
+          <div class="form-row">
+            <div class="form-group"><label for="rodovia">Rodovia:</label><input type="text" id="rodovia" required></div>
+            <div class="form-group"><label for="km">km+m:</label><input type="text" id="km" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label for="latitude">Latitude:</label><input type="number" id="latitude" step="any" placeholder="-22.9068"></div>
+            <div class="form-group"><label for="longitude">Longitude:</label><input type="number" id="longitude" step="any" placeholder="-43.1729"></div>
+          </div>
+          <button type="button" class="btn btn-location" id="getCoordsBtn">📍 Obter Coordenadas Atuais</button>
+          <div id="copyCoordsContainer" class="copy-coords hidden">
+            <input type="text" id="coordsForCopy" readonly>
+            <button type="button" id="copyCoordsBtn" class="btn btn-link">Copiar</button>
+          </div>
+          <div class="form-group"><label for="nome_obra">Nome da Obra:</label><input type="text" id="nome_obra" required></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sentido">Sentido Crescente:</label>
+              <select id="sentido" required>
+                <option value="">Selecione...</option>
+                <option value="Leste">Leste</option><option value="Oeste">Oeste</option>
+                <option value="Norte">Norte</option><option value="Sul">Sul</option>
+              </select>
+            </div>
+            <div class="form-group"><label for="data">Data da Inspeção:</label><input type="date" id="data" required></div>
+          </div>
+          <div class="form-group"><label for="inspetor">Inspetor:</label><input type="text" id="inspetor" required></div>
+        </div>
+      </div>
+
+      <div id="registros" class="tab-content">
+        <form id="inspectionForm">
+          <div class="section">
+            <div class="section-header"><h3><span class="icon">➕</span> Novo Registro</h3></div>
+
+            <div class="section">
+              <div class="section-header">
+                <h3><span class="icon">🔧</span> Elemento Inspecionado</h3>
+                <button type="button" class="btn btn-link" id="abrirModalLegendas">Consultar Legendas</button>
+              </div>
+
+              <!-- Select de elementos será preenchido via JS com nomes por extenso -->
+              <div class="form-group">
+                <label for="elemento">Elemento:</label>
+                <select id="elemento" name="elemento" required>
+                  <option value="">Carregando...</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="numero_elemento">Número do Elemento:</label>
+                  <input type="number" id="numero_elemento" name="numero_elemento" min="1" required>
+                </div>
+                <div class="form-group">
+                  <label for="vao">Vão (Opcional):</label>
+                  <select id="vao" name="vao">
+                    <option value="">N/A</option>
+                    <script>
+                      for (let i=1;i<=50;i++){
+                        document.write(`<option value="Vão ${String(i).padStart(2,'0')}">Vão ${String(i).padStart(2,'0')}</option>`);
+                      }
+                    </script>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="face">Face (Opcional):</label>
+                  <select id="face" name="face">
+                    <option value="">N/A</option>
+                    <option value="Norte">Norte</option><option value="Sul">Sul</option>
+                    <option value="Leste">Leste</option><option value="Oeste">Oeste</option>
+                    <option value="Inferior">Inferior</option><option value="Superior">Superior</option>
+                    <option value="Sob a Obra">Sob a Obra</option><option value="Sobre a Obra">Sobre a Obra</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="vista">Vista (Opcional):</label>
+                  <select id="vista" name="vista">
+                    <option value="">N/A</option>
+                    <option value="Norte - Sul">Norte - Sul</option><option value="Sul - Norte">Sul - Norte</option>
+                    <option value="Leste - Oeste">Leste - Oeste</option><option value="Oeste - Leste">Oeste - Leste</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-header"><h3><span class="icon">⚠️</span> Anomalias</h3></div>
+
+              <div class="filter-buttons" id="anomalia-filters">
+                <button type="button" class="btn-filter active" data-category="todos">Todos</button>
+                <button type="button" class="btn-filter" data-category="concreto">Concreto</button>
+                <button type="button" class="btn-filter" data-category="metalica">Metálicas</button>
+                <button type="button" class="btn-filter" data-category="pavimentacao">Pavim.</button>
+                <button type="button" class="btn-filter" data-category="apoios">Apoios</button>
+              </div>
+
+              <div class="form-group">
+                <label for="anomalia">Anomalia (Opcional):</label>
+                <select id="anomalia" name="anomalia">
+                  <option value="">Selecione...</option>
+                  <optgroup label="1. CONCRETO">
+                    <option data-category="concreto" value="1.1">1.1 - Manchas de umidade</option>
+                    <option data-category="concreto" value="1.2">1.2 - Manchas de umidade ativa</option>
+                    <option data-category="concreto" value="1.3">1.3 - Eflorescência</option>
+                    <option data-category="concreto" value="1.4">1.4 - Estalactites</option>
+                    <option data-category="concreto" value="1.5">1.5 - Concreto disgregado</option>
+                    <option data-category="concreto" value="1.5-1.17">1.5-1.17 - Concreto disgregado com Armadura Exposta</option>
+                    <option data-category="concreto" value="1.6">1.6 - Concreto segregado</option>
+                    <option data-category="concreto" value="1.6-1.17">1.6-1.17 - Concreto segregado com Armadura Exposta</option>
+                    <option data-category="concreto" value="1.7">1.7 - Concreto desagregado</option>
+                    <option data-category="concreto" value="1.7-1.17">1.7-1.17 - Concreto desagregado com Armadura Exposta</option>
+                    <option data-category="concreto" value="1.8">1.8 - Redução de cobrimento</option>
+                    <option data-category="concreto" value="1.9">1.9 - Fissuras horizontais</option>
+                    <option data-category="concreto" value="1.10">1.10 - Fissuras verticais</option>
+                    <option data-category="concreto" value="1.11">1.11 - Fissuras diagonais</option>
+                    <option data-category="concreto" value="1.12">1.12 - Fissuras mapeadas</option>
+                    <option data-category="concreto" value="1.13">1.13 - Trincas (&gt;0,5 mm)</option>
+                    <option data-category="concreto" value="1.14">1.14 - Reparos locais inadequados</option>
+                    <option data-category="concreto" value="1.15">1.15 - Fora de prumo</option>
+                    <option data-category="concreto" value="1.16">1.16 - Desplacamento</option>
+                    <option data-category="concreto" value="1.16-1.17">1.16-1.17 - Desplacamento com Armadura Exposta</option>
+                    <option data-category="concreto" value="1.17">1.17 - Armadura exposta</option>
+                    <option data-category="concreto" value="1.18">1.18 - Manchas enegrecidas</option>
+                    <option data-category="concreto" value="1.19">1.19 - Incidência de vegetação</option>
+                    <option data-category="concreto" value="1.20">1.20 - Deslocamento linear ou angular</option>
+                    <option data-category="concreto" value="1.21">1.21 - Resto de forma</option>
+                    <option data-category="concreto" value="1.22">1.22 - Drenos de injeção não arrematados</option>
+                    <option data-category="concreto" value="1.23">1.23 - Falha no acabamento dos nichos de ancoragens das armaduras protendidas</option>
+                  </optgroup>
+                  <optgroup label="2. ESTRUTURAS METÁLICAS">
+                    <option data-category="metalica" value="2.1">2.1 - Falha de acabamento na soldagem</option>
+                    <option data-category="metalica" value="2.2">2.2 - Corrosão</option>
+                    <option data-category="metalica" value="2.3">2.3 - Empeno/Deformação</option>
+                    <option data-category="metalica" value="2.4">2.4 - Falta de parafusos, porcas e arruelas</option>
+                    <option data-category="metalica" value="2.5">2.5 - Falha de pintura</option>
+                    <option data-category="metalica" value="2.6">2.6 - Trinca transpassante</option>
+                    <option data-category="metalica" value="2.7">2.7 - Infiltração no parafuso</option>
+                    <option data-category="metalica" value="2.8">2.8 - Oxidação</option>
+                    <option data-category="metalica" value="2.9">2.9 - Buzinotes curtos, danificados ou ausentes</option>
+                    <option data-category="metalica" value="2.10">2.10 - Calcinação</option>
+                  </optgroup>
+                  <optgroup label="3. PAVIMENTAÇÃO E SISTEMA VIÁRIO">
+                    <option data-category="pavimentacao" value="3.1">3.1 - Fuga de material, existência de erosão e indícios de instabilidade do talude</option>
+                    <option data-category="pavimentacao" value="3.2">3.2 - Desgaste superficial, espessura excessiva, ondulações e cavidades no pavimento</option>
+                    <option data-category="pavimentacao" value="3.3">3.3 - Deficiência e/ou ausência de sinalização horizontal, vertical e aérea</option>
+                    <option data-category="pavimentacao" value="3.4">3.4 - Descontinuidade do greide</option>
+                    <option data-category="pavimentacao" value="3.5">3.5 - Deficiência no sistema de drenagem</option>
+                    <option data-category="pavimentacao" value="3.6">3.6 - Ausência de perfil de vedação na junta de dilatação</option>
+                    <option data-category="pavimentacao" value="3.7">3.7 - Falta de estanqueidade na junta de dilatação</option>
+                    <option data-category="pavimentacao" value="3.8">3.8 - Saliência ou depressão causando desconforto ao usuário ou impacto na obra</option>
+                    <option data-category="pavimentacao" value="3.9">3.9 - Deterioração dos lábios poliméricos</option>
+                    <option data-category="pavimentacao" value="3.10">3.10 - Deterioração dos berços na junta de dilatação</option>
+                    <option data-category="pavimentacao" value="3.11">3.11 - Acúmulo de detritos na junta de dilatação</option>
+                    <option data-category="pavimentacao" value="3.12">Perfil elastomérico com descolamento, rasgos ressecamento ou deslocamento</option>
+                    <option data-category="pavimentacao" value="3.13">Abertura excessiva da junta de dilatação</option>
+                    <option data-category="pavimentacao" value="3.14">Trincas</option>
+                    <option data-category="pavimentacao" value="3.15">Fissuras</option>
+                    <option data-category="pavimentacao" value="3.16">Panela</option>
+                    <option data-category="pavimentacao" value="3.17">Exsudação</option>
+                    <option data-category="pavimentacao" value="3.18">Defeitos nos trilhos (ondulações e desgastes)</option>
+                    <option data-category="pavimentacao" value="3.19">Falha de adensamento do lastro</option>
+                    <option data-category="pavimentacao" value="3.20">Dormentes soltos, ausentes ou danificados</option>
+                    <option data-category="pavimentacao" value="3.21">Fixações danificadas</option>
+                    <option data-category="pavimentacao" value="3.22">Trilhos desalinhados em região de junta</option>
+                    <option data-category="pavimentacao" value="3.23">Espessura excessiva do lastro</option>
+                    <option data-category="pavimentacao" value="3.24">Trincas tipo "couro de jacaré"</option>
+                    <option data-category="pavimentacao" value="3.25">Dano em pavimento rígido</option>
+                  </optgroup>
+                  <optgroup label="4. APARELHOS DE APOIO">
+                    <option data-category="apoios" value="4.1">4.1 - Ausência de aparelho de apoio</option>
+                    <option data-category="apoios" value="4.2">4.2 - Bloqueio</option>
+                    <option data-category="apoios" value="4.3">4.3 - Posicionamento inadequado</option>
+                    <option data-category="apoios" value="4.4">4.4 - Acúmulo de detritos, ocorrência de agentes agressivos</option>
+                    <option data-category="apoios" value="4.5">4.5 - Ruptura</option>
+                    <option data-category="apoios" value="4.6">4.6 - Fissuras</option>
+                    <option data-category="apoios" value="4.7">4.7 - Trincas</option>
+                    <option data-category="apoios" value="4.8">4.8 - Esmagamento</option>
+                    <option data-category="apoios" value="4.9">4.9 - Deformações laterais excessivas</option>
+                    <option data-category="apoios" value="4.10">4.10 - Deslocamentos</option>
+                    <option data-category="apoios" value="4.11">4.11 - Distorção excessiva</option>
+                    <option data-category="apoios" value="4.12">Peças de aço oxidadas e expostas</option>
+                    <option data-category="apoios" value="4.13">Descolamento da fretagem</option>
+                    <option data-category="apoios" value="4.14">Assentamento irregular com concentração de esforços</option>
+                    <option data-category="apoios" value="4.15">Deterioração do berço de assentamento e de nivelamento superior</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group"><label for="comprimento">Comprimento (m):</label><input type="number" id="comprimento" name="comprimento" step="0.01" min="0"></div>
+                <div class="form-group"><label for="largura">Largura (m):</label><input type="number" id="largura" name="largura" step="0.01" min="0"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="abertura">Abertura de Fissuras:</label>
+                <select id="abertura" name="abertura">
+                  <option value="">Selecione...</option>
+                  <script>
+                    for(let i=10;i<=1000;i+=5){
+                      const v=(i/100).toFixed(2).replace('.',',');
+                      document.write(`<option value="W${v}">W${v}</option>`);
+                    }
+                  </script>
+                </select>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-header"><h3><span class="icon">📸</span> Controle de Fotos</h3></div>
+              <div class="form-row">
+                <div class="form-group"><label for="tipo_foto">Tipo de Foto:</label>
+                  <select id="tipo_foto" name="tipo_foto">
+                    <option value="camera">Câmera</option>
+                    <option value="drone">Drone</option>
+                  </select>
+                </div>
+                <div class="form-group"><label for="qtdFotos">Quantidade:</label><input type="number" id="qtdFotos" name="qtdFotos" value="2" min="1"></div>
+              </div>
+              <div id="contador_camera_group" class="form-group">
+                <label for="fotoInicialCamera">Numeração Inicial (Câmera):</label><input type="number" id="fotoInicialCamera" min="1">
+              </div>
+              <div id="contador_drone_group" class="form-group hidden">
+                <label for="fotoInicialDrone">Numeração Inicial (Drone):</label><input type="number" id="fotoInicialDrone" min="1">
+              </div>
+              <div class="photo-info"><p id="fotoInfo"></p></div>
+              <input type="hidden" id="fotoInicial" name="fotoInicial">
+            </div>
+
+            <div class="section">
+              <div class="section-header">
+                <h3><span class="icon">📝</span> Observações
+                  <button type="button" id="openAiFromObs" class="btn btn-link" style="margin-left:8px;">🧠 Preencher com IA</button>
+                </h3>
+              </div>
+              <div class="form-group">
+                <label for="observacoes">Observações Adicionais:</label>
+                <textarea id="observacoes" name="observacoes" rows="3" placeholder="Descrição detalhada..."></textarea>
+              </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-primary">💾 Salvar Registro</button>
+            <button type="button" id="cancelEditBtn" class="btn btn-warning hidden">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <hr style="margin-top:30px; border:0; border-top:1px solid #eee;">
+        <h3 style="text-align:center; color:#34495e; margin:20px 0;">Registros da Inspeção Ativa</h3>
+        <div id="registrosList" class="registros-list"></div>
+        <button type="button" id="exportButton" class="btn btn-primary" style="background: linear-gradient(135deg,#3498db,#2980b9);">📄 Exportar Registros</button>
+      </div>
+
+      <div id="caracteristicas_gerais" class="tab-content">
+        <div class="section">
+          <div class="section-header"><h3><span class="icon">🏗️</span> Características Gerais da Obra</h3></div>
+
+          <div class="form-row">
+            <div class="form-group"><label for="comprimento_total">Comprimento total (m):</label><input type="number" id="comprimento_total" step="0.01" min="0"></div>
+            <div class="form-group"><label for="largura_total">Largura total (m):</label><input type="number" id="largura_total" step="0.01" min="0"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label for="largura_util">Largura útil (m):</label><input type="number" id="largura_util" step="0.01" min="0"></div>
+            <div class="form-group">
+              <label for="sentido_crescente">Sentido crescente da rodovia:</label>
+              <select id="sentido_crescente">
+                <option value="">Selecione...</option>
+                <option value="Norte">Norte</option><option value="Sul">Sul</option>
+                <option value="Leste">Leste</option><option value="Oeste">Oeste</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label for="qtd_vaos">Quantidade de vãos:</label><input type="number" id="qtd_vaos" min="0"></div>
+            <div class="form-group"><label for="pilares">Pilares:</label><input type="text" id="pilares"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label for="juntas_dilatacao">Juntas de dilatação:</label><input type="text" id="juntas_dilatacao"></div>
+            <div class="form-group"><label for="vaos_tipo">Vãos-tipo (isostático, contínuo):</label><input type="text" id="vaos_tipo"></div>
+          </div>
+
+          <div class="form-group"><label for="tabuleiro_tipo">Tabuleiro-tipo:</label><input type="text" id="tabuleiro_tipo"></div>
+
+          <div class="form-group">
+            <label for="tipologia_longitudinal">Tipologia longitudinal (Superestrutura):</label>
+            <select id="tipologia_longitudinal">
+              <option value="">Selecione...</option>
+              <option value="Biapoiado">Biapoiado</option>
+              <option value="Isostática">Isostática</option>
+              <option value="Contínua">Contínua</option>
+              <option value="Vão apoiado em consolo ou dente Gerber">Vão apoiado em consolo ou dente Gerber</option>
+              <option value="Arco superior">Arco superior</option>
+              <option value="Arco intermediário">Arco intermediário</option>
+              <option value="Arco inferior">Arco inferior</option>
+              <option value="Pórtico">Pórtico</option>
+              <option value="Estaiada">Estaiada</option>
+              <option value="Pênsil">Pênsil</option>
+              <option value="Treliça">Treliça</option>
+              <option value="Outra">Outra</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="tipologia_transversal">Tipologia transversal (Superestrutura):</label>
+            <select id="tipologia_transversal">
+              <option value="">Selecione...</option>
+              <option value="Laje">Laje</option>
+              <option value="Duas vigas">Duas vigas</option>
+              <option value="Grelha">Grelha</option>
+              <option value="Seção celular">Seção celular</option>
+              <option value="Treliça">Treliça</option>
+              <option value="Outras">Outras</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="tipologia_mesoestrutura">Tipologia da mesoestrutura:</label>
+            <select id="tipologia_mesoestrutura">
+              <option value="">Selecione...</option>
+              <option value="Pilares isolados">Pilares isolados</option>
+              <option value="Pilares com travessa">Pilares com travessa</option>
+              <option value="Pilares contraventados">Pilares contraventados</option>
+              <option value="Pilares parede">Pilares parede</option>
+              <option value="Pilones">Pilones</option>
+              <option value="Outras">Outras</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="tipologia_infraestrutura">Tipologia da infraestrutura:</label>
+            <select id="tipologia_infraestrutura">
+              <option value="">Selecione...</option>
+              <option value="Fundação superficial">Fundação superficial</option>
+              <option value="Tubulões">Tubulões</option>
+              <option value="Estaca escavada">Estaca escavada</option>
+              <option value="Estaca pré-moldada">Estaca pré-moldada</option>
+              <option value="Estaca metálica">Estaca metálica</option>
+              <option value="Estaca de madeira">Estaca de madeira</option>
+              <option value="Não identificado">Não identificado</option>
+              <option value="Outras">Outras</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sistemas_construtivos">Sistemas construtivos:</label>
+            <select id="sistemas_construtivos">
+              <option value="">Selecione...</option>
+              <option value="Moldado no local">Moldado no local</option>
+              <option value="Pré-moldado somente armado">Pré-moldado somente armado</option>
+              <option value="Pré-moldado protendido (pós-tensão)">Pré-moldado protendido (pós-tensão)</option>
+              <option value="Pré-moldado protendido (pré-tensão)">Pré-moldado protendido (pré-tensão)</option>
+              <option value="Balanço sucessivo">Balanço sucessivo</option>
+              <option value="Aduelas pré-moldadas">Aduelas pré-moldadas</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="natureza_transposicao">Natureza da transposição:</label>
+            <select id="natureza_transposicao">
+              <option value="">Selecione...</option>
+              <option value="Superfície aquífera">Superfície aquífera</option>
+              <option value="Rodovia">Rodovia</option>
+              <option value="Ferrovia">Ferrovia</option>
+              <option value="Vale">Vale</option>
+              <option value="Grota">Grota</option>
+              <option value="Contorno de encosta">Contorno de encosta</option>
+              <option value="Via urbana">Via urbana</option>
+              <option value="Via de pedestre">Via de pedestre</option>
+              <option value="Outras">Outras</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="materiais">Materiais:</label>
+            <select id="materiais">
+              <option value="">Selecione...</option>
+              <option value="Concreto simples (CS)">Concreto simples (CS)</option>
+              <option value="Concreto armado (CA)">Concreto armado (CA)</option>
+              <option value="Concreto protendido (CP)">Concreto protendido (CP)</option>
+              <option value="Aço (A)">Aço (A)</option>
+              <option value="Madeira (MD)">Madeira (MD)</option>
+              <option value="Pedra argamassada (PA)">Pedra argamassada (PA)</option>
+              <option value="Mista (MI)">Mista (MI)</option>
+              <option value="Alvenaria (AL)">Alvenaria (AL)</option>
+              <option value="Não identificado">Não identificado</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label for="qtd_aparelhos_apoio">Quantidade de aparelhos de apoio:</label><input type="number" id="qtd_aparelhos_apoio" min="0"></div>
+            <div class="form-group"><label for="gabarito_vertical_sob">Gabarito vertical sob a OAE (m):</label><input type="number" id="gabarito_vertical_sob" step="0.01" min="0"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label for="gabarito_vertical_sobre">Gabarito vertical sobre a OAE (m):</label><input type="number" id="gabarito_vertical_sobre" step="0.01" min="0"></div>
+            <div class="form-group"><label for="gabarito_navegavel_altura">Gabarito navegável — Altura (m):</label><input type="number" id="gabarito_navegavel_altura" step="0.01" min="0"></div>
+            <div class="form-group"><label for="gabarito_navegavel_largura">Gabarito navegável — Largura (m):</label><input type="number" id="gabarito_navegavel_largura" step="0.01" min="0"></div>
+          </div>
+
+          <button type="button" id="salvarCaracteristicasBtn" class="btn btn-primary" style="margin-top:10px;">💾 Salvar Características</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer"><p>Desenvolvido por: João Rômulo Gomes</p></footer>
+  </div>
+
+  <!-- Modal de Legendas -->
+  <div id="legendaModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Legendas dos Elementos</h2>
+        <span class="close-button">&times;</span>
+      </div>
+      <div class="legenda-table">
+        <table>
+          <tr><th>Sigla</th><th>Descrição</th></tr>
+          <tr><td>AA</td><td>Aparelho de apoio</td></tr>
+          <tr><td>AB</td><td>Abóbada</td></tr>
+          <tr><td>AC</td><td>Acesso</td></tr>
+          <tr><td>AD</td><td>Aduela</td></tr>
+          <tr><td>AL</td><td>Muro de ala</td></tr>
+          <tr><td>ALE</td><td>Alma externa (caixão)</td></tr>
+          <tr><td>ALI</td><td>Alma interna (caixão)</td></tr>
+          <tr><td>AP</td><td>Apoio</td></tr>
+          <tr><td>BÇ</td><td>Berço</td></tr>
+          <tr><td>BL</td><td>Balanço longitudinal</td></tr>
+          <tr><td>BLC</td><td>Bloco de fundação</td></tr>
+          <tr><td>BR</td><td>Barreira rígida</td></tr>
+          <tr><td>BU</td><td>Bueiro</td></tr>
+          <tr><td>BUZ</td><td>Buzinote</td></tr>
+          <tr><td>BZ</td><td>Banzo</td></tr>
+          <tr><td>CEL</td><td>Célula</td></tr>
+          <tr><td>CO</td><td>Cortina</td></tr>
+          <tr><td>DG</td><td>Dente gerber</td></tr>
+          <tr><td>DI</td><td>Diagonal</td></tr>
+          <tr><td>DM</td><td>Defensa metálica</td></tr>
+          <tr><td>DR</td><td>Drenagem</td></tr>
+          <tr><td>EB</td><td>Emboque</td></tr>
+          <tr><td>ENC</td><td>Encontro</td></tr>
+          <tr><td>ET</td><td>Estaca</td></tr>
+          <tr><td>GC</td><td>Guarda-corpos</td></tr>
+          <tr><td>GR</td><td>Guarda-rodas</td></tr>
+          <tr><td>JD</td><td>Junta de dilatação</td></tr>
+          <tr><td>LB</td><td>Laje em balanço (transversal)</td></tr>
+        </table>
+        <table>
+          <tr><th>Sigla</th><th>Descrição</th></tr>
+          <tr><td>LI</td><td>Laje inferior</td></tr>
+          <tr><td>LS</td><td>Laje superior</td></tr>
+          <tr><td>LT</td><td>Laje de transição</td></tr>
+          <tr><td>MF</td><td>Meio-fio</td></tr>
+          <tr><td>MT</td><td>Montante</td></tr>
+          <tr><td>P</td><td>Pilar</td></tr>
+          <tr><td>PA</td><td>Parede</td></tr>
+          <tr><td>PC</td><td>Piso de concreto</td></tr>
+          <tr><td>PF</td><td>Pavimento flexível</td></tr>
+          <tr><td>PIL</td><td>Pilone</td></tr>
+          <tr><td>PR</td><td>Pavimento rígido</td></tr>
+          <tr><td>PS</td><td>Passeio</td></tr>
+          <tr><td>SAP</td><td>Sapata</td></tr>
+          <tr><td>SH</td><td>Sinalização Horizontal</td></tr>
+          <tr><td>SJ</td><td>Sarjeta</td></tr>
+          <tr><td>SV</td><td>Sinalização Vertical</td></tr>
+          <tr><td>TA</td><td>Talude</td></tr>
+          <tr><td>TRE</td><td>Treliça</td></tr>
+          <tr><td>TUB</td><td>Tubulão</td></tr>
+          <tr><td>V</td><td>Vão</td></tr>
+          <tr><td>VA</td><td>Valeta</td></tr>
+          <tr><td>VL</td><td>Viga longarina</td></tr>
+          <tr><td>VLR</td><td>Viga longarina de rampa</td></tr>
+          <tr><td>VLT</td><td>Viga longarina de travessia</td></tr>
+          <tr><td>VT</td><td>Viga transversina</td></tr>
+          <tr><td>VTR</td><td>Viga travessa</td></tr>
+          <tr><td>VTRAV</td><td>Viga de travamento</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inputs ocultos para importação -->
+  <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;">
+
+  <!-- =================== LÓGICA =================== -->
+  <script>
+    // ====== 1) MAPA DE ELEMENTOS (sigla <-> nome) ======
+    const ELEMENTOS_MAP = [
+      // Com sigla oficial:
+      {sigla:'AA', nome:'Aparelho de apoio'},
+      {sigla:'AB', nome:'Abóbada'},
+      {sigla:'AC', nome:'Acesso'},
+      {sigla:'AD', nome:'Aduela'},
+      {sigla:'AL', nome:'Muro de ala'},
+      {sigla:'ALE', nome:'Alma externa (caixão)'},
+      {sigla:'ALI', nome:'Alma interna (caixão)'},
+      {sigla:'AP', nome:'Apoio'},
+      {sigla:'BÇ', nome:'Berço'},
+      {sigla:'BL', nome:'Balanço longitudinal'},
+      {sigla:'BLC', nome:'Bloco de fundação'},
+      {sigla:'BR', nome:'Barreira rígida'},
+      {sigla:'BU', nome:'Bueiro'},
+      {sigla:'BUZ', nome:'Buzinote'},
+      {sigla:'BZ', nome:'Banzo'},
+      {sigla:'CEL', nome:'Célula'},
+      {sigla:'CO', nome:'Cortina'},
+      {sigla:'DG', nome:'Dente gerber'},
+      {sigla:'DI', nome:'Diagonal'},
+      {sigla:'DM', nome:'Defensa metálica'},
+      {sigla:'DR', nome:'Drenagem'},
+      {sigla:'EB', nome:'Emboque'},
+      {sigla:'ENC', nome:'Encontro'},
+      {sigla:'ET', nome:'Estaca'},
+      {sigla:'GC', nome:'Guarda-corpos'},
+      {sigla:'GR', nome:'Guarda-rodas'},
+      {sigla:'JD', nome:'Junta de dilatação'},
+      {sigla:'LB', nome:'Laje em balanço (transversal)'},
+      {sigla:'LI', nome:'Laje inferior'},
+      {sigla:'LS', nome:'Laje superior'},
+      {sigla:'LT', nome:'Laje de transição'},
+      {sigla:'MF', nome:'Meio-fio'},
+      {sigla:'MT', nome:'Montante'},
+      {sigla:'P',  nome:'Pilar'},
+      {sigla:'PA', nome:'Parede'},
+      {sigla:'PC', nome:'Piso de concreto'},
+      {sigla:'PF', nome:'Pavimento flexível'},
+      {sigla:'PIL',nome:'Pilone'},
+      {sigla:'PR', nome:'Pavimento rígido'},
+      {sigla:'PS', nome:'Passeio'},
+      {sigla:'SAP',nome:'Sapata'},
+      {sigla:'SH', nome:'Sinalização Horizontal'},
+      {sigla:'SJ', nome:'Sarjeta'},
+      {sigla:'SV', nome:'Sinalização Vertical'},
+      {sigla:'TA', nome:'Talude'},
+      {sigla:'TRE',nome:'Treliça'},
+      {sigla:'TUB',nome:'Tubulão'},
+      {sigla:'V',  nome:'Vão'},
+      {sigla:'VA', nome:'Valeta'},
+      {sigla:'VL', nome:'Viga longarina'},
+      {sigla:'VLR',nome:'Viga longarina de rampa'},
+      {sigla:'VLT',nome:'Viga longarina de travessia'},
+      {sigla:'VT', nome:'Viga transversina'},
+      {sigla:'VTR',nome:'Viga travessa'},
+      {sigla:'VTRAV',nome:'Viga de travamento'},
+
+      // Itens sem sigla oficial (mantidos por extenso):
+      {sigla:'', nome:'FOTO CAPA PANORÂMICA'},
+      {sigla:'', nome:'BLOCO DE ANCORAGEM'},
+      {sigla:'', nome:'CABO DE PROTENSÃO'},
+      {sigla:'', nome:'JANELA'},
+      {sigla:'', nome:'JUNTA JUSANTE'},
+      {sigla:'', nome:'PINGADEIRA'},
+      {sigla:'', nome:'PISTA'},
+      {sigla:'', nome:'PLACA DE FECHAMENTO'},
+      {sigla:'', nome:'RAMPA'},
+      {sigla:'SV-BARREIRAS', nome:'Sinalização Vertical — Barreiras'},
+      {sigla:'SV-GABARITO',  nome:'Sinalização Vertical — Gabarito'},
+      {sigla:'', nome:'TESTEIRA'},
+      {sigla:'', nome:'TRAVESSIA'},
+      {sigla:'', nome:'TRECHO'},
+      {sigla:'', nome:'TUBO ARMCO'},
+      {sigla:'', nome:'TUBULAÇÃO DE UTILIDADES'},
+      {sigla:'', nome:'FINAL DE INSPEÇÃO'},
+      // "L" isolado no antigo select: assumiremos "Laje" (sem sigla específica)
+      {sigla:'', nome:'Laje'}
+    ];
+
+    const SIGLA_POR_NOME = {};
+    const NOME_POR_SIGLA = {};
+    ELEMENTOS_MAP.forEach(e => {
+      SIGLA_POR_NOME[e.nome] = e.sigla || '';
+      if (e.sigla) NOME_POR_SIGLA[e.sigla] = e.nome;
+    });
+
+    // ====== 2) UI/TABS ======
+    function showTab(tabName, element) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      element.classList.add('active');
+    }
+  </script>
+
+  <!-- ====== APP ====== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const appState = { db: {}, activeInspecaoId: null, editingRecordId: null };
+
+      const inspectionForm = document.getElementById('inspectionForm');
+      const inspecaoAtivaSelect = document.getElementById('inspecaoAtiva');
+      const novaInspecaoBtn = document.getElementById('novaInspecaoBtn');
+      const deletarInspecaoBtn = document.getElementById('deletarInspecaoBtn');
+      const getCoordsBtn = document.getElementById('getCoordsBtn');
+      const copyCoordsContainer = document.getElementById('copyCoordsContainer');
+      const coordsForCopyInput = document.getElementById('coordsForCopy');
+      const copyCoordsBtn = document.getElementById('copyCoordsBtn');
+      const registrosList = document.getElementById('registrosList');
+      const exportButton = document.getElementById('exportButton');
+      const salvarCaracteristicasBtn = document.getElementById('salvarCaracteristicasBtn');
+
+      const dadosGeraisFields = {
+        concessionaria: document.getElementById('concessionaria'),
+        rodovia: document.getElementById('rodovia'),
+        km: document.getElementById('km'),
+        nome_obra: document.getElementById('nome_obra'),
+        sentido: document.getElementById('sentido'),
+        data: document.getElementById('data'),
+        inspetor: document.getElementById('inspetor'),
+        latitude: document.getElementById('latitude'),
+        longitude: document.getElementById('longitude'),
+
+        comprimento_total: document.getElementById('comprimento_total'),
+        largura_total: document.getElementById('largura_total'),
+        largura_util: document.getElementById('largura_util'),
+        sentido_crescente: document.getElementById('sentido_crescente'),
+        qtd_vaos: document.getElementById('qtd_vaos'),
+        pilares: document.getElementById('pilares'),
+        juntas_dilatacao: document.getElementById('juntas_dilatacao'),
+        vaos_tipo: document.getElementById('vaos_tipo'),
+        tabuleiro_tipo: document.getElementById('tabuleiro_tipo'),
+        tipologia_longitudinal: document.getElementById('tipologia_longitudinal'),
+        tipologia_transversal: document.getElementById('tipologia_transversal'),
+        tipologia_mesoestrutura: document.getElementById('tipologia_mesoestrutura'),
+        tipologia_infraestrutura: document.getElementById('tipologia_infraestrutura'),
+        sistemas_construtivos: document.getElementById('sistemas_construtivos'),
+        natureza_transposicao: document.getElementById('natureza_transposicao'),
+        materiais: document.getElementById('materiais'),
+        qtd_aparelhos_apoio: document.getElementById('qtd_aparelhos_apoio'),
+        gabarito_vertical_sob: document.getElementById('gabarito_vertical_sob'),
+        gabarito_vertical_sobre: document.getElementById('gabarito_vertical_sobre'),
+        gabarito_navegavel_altura: document.getElementById('gabarito_navegavel_altura'),
+        gabarito_navegavel_largura: document.getElementById('gabarito_navegavel_largura')
+      };
+
+      const registroFields = {
+        elemento: document.getElementById('elemento'),
+        numero_elemento: document.getElementById('numero_elemento'),
+        face: document.getElementById('face'),
+        vao: document.getElementById('vao'),
+        vista: document.getElementById('vista'),
+        anomalia: document.getElementById('anomalia'),
+        comprimento: document.getElementById('comprimento'),
+        largura: document.getElementById('largura'),
+        abertura: document.getElementById('abertura'),
+        observacoes: document.getElementById('observacoes')
+      };
+
+      const tipoFotoSelect = document.getElementById('tipo_foto');
+      const qtdFotosInput = document.getElementById('qtdFotos');
+      const fotoInicialCameraInput = document.getElementById('fotoInicialCamera');
+      const fotoInicialDroneInput = document.getElementById('fotoInicialDrone');
+      const fotoInicialHidden = document.getElementById('fotoInicial');
+      const fotoInfo = document.getElementById('fotoInfo');
+
+      const modal = document.getElementById('legendaModal');
+      const btnAbrirModal = document.getElementById('abrirModalLegendas');
+      const spanCloseModal = document.querySelector('.close-button');
+      const tabs = document.querySelectorAll('.tab');
+      const submitBtn = document.getElementById('submitBtn');
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+      const anomaliaSelect = document.getElementById('anomalia');
+      const anomaliaOptions = Array.from(anomaliaSelect.options);
+      const filterButtons = document.querySelectorAll('#anomalia-filters .btn-filter');
+
+      // ===== 2.1) Preenche o SELECT de elementos com nomes por extenso =====
+      function buildElementoOptions() {
+        const sel = registroFields.elemento;
+        sel.innerHTML = '<option value="">Selecione...</option>';
+        const arr = ELEMENTOS_MAP.slice().sort((a,b)=> a.nome.localeCompare(b.nome,'pt'));
+        for (const e of arr) {
+          const opt = document.createElement('option');
+          opt.textContent = e.nome;
+          opt.value = e.nome;           // valor por extenso
+          opt.dataset.sigla = e.sigla;  // guarda sigla
+          sel.appendChild(opt);
+        }
+      }
+      buildElementoOptions();
+
+      // ===== Modal legendas =====
+      btnAbrirModal.onclick = () => { modal.style.display = "block"; };
+      spanCloseModal.onclick = () => { modal.style.display = "none"; };
+      window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
+
+      // ===== Filtro de anomalias =====
+      function filterAnomalias(category) {
+        anomaliaSelect.value = '';
+        anomaliaOptions.forEach(option => {
+          if (option.value === '') { option.style.display = ''; return; }
+          const optionCategory = option.dataset.category;
+          option.style.display = (category === 'todos' || category === optionCategory) ? '' : 'none';
+        });
+        filterButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.category === category));
+      }
+      filterButtons.forEach(btn => btn.addEventListener('click', () => filterAnomalias(btn.dataset.category)));
+
+      // ===== Local DB =====
+      const loadDb = () => { appState.db = JSON.parse(localStorage.getItem('OAE_INSPECTIONS_DB')) || {}; };
+      const saveDb = () => { localStorage.setItem('OAE_INSPECTIONS_DB', JSON.stringify(appState.db)); };
+
+      const populateInspecaoSelector = () => {
+        inspecaoAtivaSelect.innerHTML = '';
+        const ids = Object.keys(appState.db).sort();
+        if (ids.length === 0) {
+          inspecaoAtivaSelect.innerHTML = '<option value="">Crie uma nova inspeção</option>';
+          updateInspecoesList();
+          return;
+        }
+        ids.forEach(id => {
+          const o = document.createElement('option');
+          o.value = id; o.textContent = id;
+          inspecaoAtivaSelect.appendChild(o);
+        });
+        updateInspecoesList();
+      };
+
+      const updateInspecoesList = () => {
+        const inspecoesList = document.getElementById('inspecoesList');
+        const ids = Object.keys(appState.db).sort();
+        if (ids.length === 0) {
+          inspecoesList.innerHTML = '<p style="text-align:center; color:#6c757d; padding:20px;">Nenhuma inspeção criada ainda.</p>';
+          return;
+        }
+        inspecoesList.innerHTML = '';
+        ids.forEach(id => {
+          const inspecao = appState.db[id];
+          const item = document.createElement('div');
+          item.className = 'registro-item';
+          item.innerHTML = `
+            <div class="registro-item-header">
+              <h4>${id}</h4>
+              <div class="registro-item-actions">
+                <button class="btn btn-link" onclick="selectInspecao('${id}')">📋</button>
+                <button class="btn btn-secondary" onclick="deleteInspecao('${id}')">🗑️</button>
+              </div>
+            </div>
+            <p><strong>Concessionária:</strong> ${inspecao.dadosGerais.concessionaria || 'Não informado'}</p>
+            <p><strong>Obra:</strong> ${inspecao.dadosGerais.nome_obra || 'Não informado'}</p>
+            <p><strong>Rodovia:</strong> ${inspecao.dadosGerais.rodovia || 'Não informado'}</p>
+            <p><strong>KM:</strong> ${inspecao.dadosGerais.km || 'Não informado'}</p>
+            <p><strong>Registros:</strong> ${inspecao.registros.length} item(s)</p>
+          `;
+          inspecoesList.appendChild(item);
+        });
+      };
+
+      const updateTabStates = () => {
+        const has = !!appState.activeInspecaoId;
+        tabs.forEach(tab => { if (tab.dataset.tab !== 'inspecoes') tab.disabled = !has; });
+      };
+
+      const setActiveInspecao = (id) => {
+        appState.activeInspecaoId = id;
+        updateTabStates();
+        if (cancelEditBtn.offsetParent !== null) cancelEditBtn.click();
+
+        if (!id) {
+          Object.values(dadosGeraisFields).forEach(f => f.value = '');
+          dadosGeraisFields.data.value = new Date().toISOString().split('T')[0];
+          loadRegistros([]);
+          copyCoordsContainer.classList.add('hidden');
+          return;
+        }
+        const inspecao = appState.db[id];
+        if (!inspecao) return;
+
+        for (const key in inspecao.dadosGerais) {
+          if (dadosGeraisFields[key]) dadosGeraisFields[key].value = inspecao.dadosGerais[key] || '';
+        }
+
+        if (inspecao.dadosGerais.latitude && inspecao.dadosGerais.longitude) {
+          coordsForCopyInput.value = `${inspecao.dadosGerais.latitude}, ${inspecao.dadosGerais.longitude}`;
+          copyCoordsContainer.classList.remove('hidden');
+        } else copyCoordsContainer.classList.add('hidden');
+
+        fotoInicialCameraInput.value = inspecao.contadores.camera;
+        fotoInicialDroneInput.value = inspecao.contadores.drone;
+        toggleContadorInputs();
+        loadRegistros(inspecao.registros);
+      };
+
+      const saveActiveInspecaoData = () => {
+        if (!appState.activeInspecaoId) return;
+        const inspecao = appState.db[appState.activeInspecaoId];
+        if (!inspecao) return;
+        for (const key in dadosGeraisFields) inspecao.dadosGerais[key] = dadosGeraisFields[key].value;
+        saveDb();
+      };
+
+      // Helpers para nome/sigla em registros (retrocompatibilidade)
+      function resolveElementoNome(r) {
+        return r.elemento_nome || r.elemento || (r.elemento_sigla ? (NOME_POR_SIGLA[r.elemento_sigla] || r.elemento_sigla) : '');
+      }
+      function resolveElementoSigla(r) {
+        if (r.elemento_sigla) return r.elemento_sigla;
+        if (r.elemento_nome) return SIGLA_POR_NOME[r.elemento_nome] || '';
+        if (r.elemento) return SIGLA_POR_NOME[r.elemento] || (NOME_POR_SIGLA[r.elemento] ? r.elemento : '');
+        return '';
+      }
+
+      const loadRegistros = (registros=[]) => {
+        registrosList.innerHTML = '';
+        if (registros.length === 0) {
+          registrosList.innerHTML = '<p style="text-align:center; color:#6c757d; padding:20px;">Nenhum registro para esta inspeção.</p>';
+          return;
+        }
+        registros.slice().reverse().forEach(registro => {
+          const fotoFinal = parseInt(registro.fotoInicial) + parseInt(registro.qtdFotos) - 1;
+          const nome = resolveElementoNome(registro);
+          const sigla = resolveElementoSigla(registro);
+          const item = document.createElement('div');
+          item.className = 'registro-item';
+          item.innerHTML = `
+            <div class="registro-item-header">
+              <h4>${nome} ${sigla ? `(${sigla})` : ''} — ${registro.numero_elemento}</h4>
+              <div class="registro-item-actions">
+                <button class="btn btn-link" onclick="duplicateRegistro('${registro.id}')">📄</button>
+                <button class="btn btn-link" onclick="editRegistro('${registro.id}')">✏️</button>
+                <button class="btn btn-secondary" onclick="deleteRegistro('${registro.id}')">🗑️</button>
+              </div>
+            </div>
+            <p><strong>Anomalia:</strong> ${registro.anomalia}</p>
+            <p><strong>Fotos (${registro.tipo_foto}):</strong> ${registro.fotoInicial} a ${fotoFinal}</p>
+          `;
+          registrosList.appendChild(item);
+        });
+      };
+
+      window.deleteRegistro = (id) => {
+        if (!appState.activeInspecaoId || !confirm('Tem certeza?')) return;
+        const inspecao = appState.db[appState.activeInspecaoId];
+        inspecao.registros = inspecao.registros.filter(r => r.id != id);
+        saveDb(); loadRegistros(inspecao.registros);
+      };
+
+      window.selectInspecao = (id) => {
+        inspecaoAtivaSelect.value = id;
+        setActiveInspecao(id);
+        showTab('dados_gerais', document.querySelector('.tab[data-tab="dados_gerais"]'));
+      };
+
+      window.deleteInspecao = (id) => {
+        if (!confirm(`Tem certeza que deseja DELETAR PERMANENTEMENTE a inspeção "${id}" e todos os seus registros?`)) return;
+        delete appState.db[id]; saveDb(); populateInspecaoSelector();
+        const firstId = Object.keys(appState.db)[0] || null;
+        setActiveInspecao(firstId); if (firstId) inspecaoAtivaSelect.value = firstId;
+      };
+
+      function populateFormWithRecord(id) {
+        const inspecao = appState.db[appState.activeInspecaoId];
+        const record = inspecao.registros.find(r => r.id === id);
+        if (!record) return;
+
+        filterAnomalias('todos');
+
+        // Elemento (seleciona por nome)
+        const nome = resolveElementoNome(record);
+        registroFields.elemento.value = nome;
+
+        // Campos simples
+        ['numero_elemento','face','vao','vista','comprimento','largura','abertura','observacoes'].forEach(k => {
+          if (record[k] !== undefined && registroFields[k]) registroFields[k].value = record[k];
         });
 
-        // Checagem de online/offline para IA
-        function updateOnlineHint(){
-          aiOnlineHint.textContent = navigator.onLine ? '🟢 Online' : '🔴 Offline';
+        // Anomalia (usa texto como no select)
+        const opt = Array.from(anomaliaSelect.options).find(o => o.textContent === record.anomalia);
+        anomaliaSelect.value = opt ? opt.value : '';
+
+        // Fotos
+        tipoFotoSelect.value = record.tipo_foto;
+        qtdFotosInput.value = record.qtdFotos;
+        fotoInicialCameraInput.value = record.fotoInicial;
+        fotoInicialDroneInput.value = record.fotoInicial;
+        toggleContadorInputs();
+      }
+
+      window.editRegistro = (id) => {
+        appState.editingRecordId = id;
+        populateFormWithRecord(id);
+        submitBtn.textContent = '💾 Atualizar Registro';
+        cancelEditBtn.classList.remove('hidden');
+        showTab('registros', document.querySelector('.tab[data-tab="registros"]'));
+        inspectionForm.scrollIntoView({ behavior:'smooth' });
+      };
+
+      window.duplicateRegistro = (id) => {
+        appState.editingRecordId = null;
+        const inspecao = appState.db[appState.activeInspecaoId];
+        const record = inspecao.registros.find(r => r.id === id);
+        if (!record) return;
+        populateFormWithRecord(id);
+        submitBtn.textContent = '💾 Salvar Registro';
+        cancelEditBtn.classList.add('hidden');
+        const tipoFoto = tipoFotoSelect.value;
+        if (tipoFoto === 'camera') fotoInicialCameraInput.value = inspecao.contadores.camera;
+        else fotoInicialDroneInput.value = inspecao.contadores.drone;
+        updatePhotoInfo();
+        inspectionForm.scrollIntoView({ behavior:'smooth' });
+        alert("Registro duplicado. Altere o necessário e salve como um novo registro.");
+      };
+
+      cancelEditBtn.addEventListener('click', () => {
+        appState.editingRecordId = null;
+        submitBtn.textContent = '💾 Salvar Registro';
+        cancelEditBtn.classList.add('hidden');
+        inspectionForm.reset();
+        const inspecao = appState.db[appState.activeInspecaoId];
+        if (inspecao) {
+          fotoInicialCameraInput.value = inspecao.contadores.camera;
+          fotoInicialDroneInput.value = inspecao.contadores.drone;
         }
-        function toggleAskDisabled(){
-          askAiBtn.disabled = !navigator.onLine;
-          askAiBtn.title = navigator.onLine ? '' : 'Sem conexão. A IA exige internet.';
-        }
-        window.addEventListener('online', () => { updateOnlineHint(); toggleAskDisabled(); });
-        window.addEventListener('offline', () => { updateOnlineHint(); toggleAskDisabled(); });
+        toggleContadorInputs();
+      });
 
-        // Coleta de contexto dos campos
-        function v(id){ const el=document.getElementById(id); return el ? (el.value || '') : ''; }
+      inspecaoAtivaSelect.addEventListener('change', () => { saveActiveInspecaoData(); setActiveInspecao(inspecaoAtivaSelect.value); });
 
-        function coletarContexto(){
-          // Dados gerais
-          const dadosGerais = {
-            concessionaria: v('concessionaria'),
-            rodovia: v('rodovia'),
-            km: v('km'),
-            nome_obra: v('nome_obra'),
-            sentido: v('sentido'),
-            data: v('data'),
-            inspetor: v('inspetor'),
-            latitude: v('latitude'),
-            longitude: v('longitude')
-          };
+      novaInspecaoBtn.addEventListener('click', () => {
+        const rodovia = prompt("Digite a Rodovia (ex: BR-101):");
+        const km = prompt("Digite o KM (ex: 50+300):");
+        if (!rodovia || !km) return alert("Rodovia e KM são obrigatórios.");
+        const newId = `${rodovia.trim()}_${km.trim()}`.replace(/ /g,'_');
+        if (appState.db[newId]) return alert("Uma inspeção com essa Rodovia e KM já existe.");
+        appState.db[newId] = {
+          dadosGerais: {
+            rodovia, km, data: new Date().toISOString().split('T')[0],
+            inspetor:'', concessionaria:'', nome_obra:'', sentido:'',
+            latitude:'', longitude:''
+          },
+          contadores: { camera:1, drone:1 },
+          registros: []
+        };
+        saveDb(); populateInspecaoSelector();
+        inspecaoAtivaSelect.value = newId; setActiveInspecao(newId);
+        alert(`Nova inspeção "${newId}" criada. Vá para a aba 'Dados Gerais' para preencher o resto das informações.`);
+        showTab('dados_gerais', document.querySelector('.tab[data-tab="dados_gerais"]'));
+      });
 
-          // Características
-          const caracteristicas = {
-            comprimento_total: v('comprimento_total'),
-            largura_total: v('largura_total'),
-            largura_util: v('largura_util'),
-            sentido_crescente: v('sentido_crescente'),
-            qtd_vaos: v('qtd_vaos'),
-            pilares: v('pilares'),
-            juntas_dilatacao: v('juntas_dilatacao'),
-            vaos_tipo: v('vaos_tipo'),
-            tabuleiro_tipo: v('tabuleiro_tipo'),
-            tipologia_longitudinal: v('tipologia_longitudinal'),
-            tipologia_transversal: v('tipologia_transversal'),
-            tipologia_mesoestrutura: v('tipologia_mesoestrutura'),
-            tipologia_infraestrutura: v('tipologia_infraestrutura'),
-            sistemas_construtivos: v('sistemas_construtivos'),
-            natureza_transposicao: v('natureza_transposicao'),
-            materiais: v('materiais'),
-            qtd_aparelhos_apoio: v('qtd_aparelhos_apoio'),
-            gabarito_vertical_sob: v('gabarito_vertical_sob'),
-            gabarito_vertical_sobre: v('gabarito_vertical_sobre'),
-            gabarito_navegavel_altura: v('gabarito_navegavel_altura'),
-            gabarito_navegavel_largura: v('gabarito_navegavel_largura')
-          };
+      deletarInspecaoBtn.addEventListener('click', () => {
+        if (!appState.activeInspecaoId) return alert("Nenhuma inspeção selecionada.");
+        if (!confirm(`Tem certeza que deseja DELETAR PERMANENTEMENTE a inspeção "${appState.activeInspecaoId}" e todos os seus registros?`)) return;
+        delete appState.db[appState.activeInspecaoId];
+        saveDb(); populateInspecaoSelector();
+        const firstId = Object.keys(appState.db)[0] || null;
+        setActiveInspecao(firstId); if (firstId) inspecaoAtivaSelect.value = firstId;
+      });
 
-          // Registro atual (form)
-          const registroAtual = {
-            elemento: v('elemento'),
-            numero_elemento: v('numero_elemento'),
-            vao: v('vao'),
-            face: v('face'),
-            vista: v('vista'),
-            anomalia: (function(){
-              const sel = document.getElementById('anomalia');
-              if (!sel) return '';
-              const opt = sel.options[sel.selectedIndex];
-              return opt ? opt.textContent : '';
-            })(),
-            comprimento: v('comprimento'),
-            largura: v('largura'),
-            abertura: v('abertura'),
-            tipo_foto: v('tipo_foto'),
-            qtd_fotos: v('qtdFotos'),
-            foto_inicial: v('fotoInicial'),
-            observacoes_digitadas: v('observacoes')
-          };
+      salvarCaracteristicasBtn.addEventListener('click', () => { saveActiveInspecaoData(); alert('Características gerais salvas com sucesso!'); });
+      Object.values(dadosGeraisFields).forEach(f => f.addEventListener('blur', saveActiveInspecaoData));
 
-          // Inspeção ativa e últimos registros salvos (via localStorage)
-          let ultimaInspecao = null;
-          try {
-            const db = JSON.parse(localStorage.getItem('OAE_INSPECTIONS_DB') || '{}');
-            const activeId = (document.getElementById('inspecaoAtiva') || {}).value || null;
-            if (activeId && db[activeId]) {
-              const regs = db[activeId].registros || [];
-              ultimaInspecao = {
-                id: activeId,
-                contadores: db[activeId].contadores || {},
-                total_registros: regs.length,
-                ultimos_registros: regs.slice(-5) // últimos 5
-              };
+      // Geolocalização
+      getCoordsBtn.addEventListener('click', () => {
+        if (!("geolocation" in navigator)) { alert("Geolocalização não é suportada pelo seu navegador."); return; }
+        navigator.geolocation.getCurrentPosition(
+          (pos)=>{
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            dadosGeraisFields.latitude.value = lat.toFixed(7);
+            dadosGeraisFields.longitude.value = lon.toFixed(7);
+            coordsForCopyInput.value = `${lat.toFixed(7)}, ${lon.toFixed(7)}`;
+            copyCoordsContainer.classList.remove('hidden');
+            saveActiveInspecaoData();
+            alert('Coordenadas obtidas com sucesso!');
+          },
+          (err)=>{
+            let msg = "Ocorreu um erro desconhecido.";
+            if (err.code===err.PERMISSION_DENIED) msg = "Permissão para acessar a localização foi negada.";
+            else if (err.code===err.POSITION_UNAVAILABLE) msg = "A informação de localização não está disponível.";
+            else if (err.code===err.TIMEOUT) msg = "A requisição para obter a localização expirou.";
+            alert(msg);
+          }
+        );
+      });
+
+      copyCoordsBtn.addEventListener('click', () => {
+        coordsForCopyInput.select();
+        document.execCommand('copy');
+        alert('Coordenadas copiadas para a área de transferência!');
+      });
+
+      // Fotos
+      function updatePhotoInfo() {
+        const tipo = tipoFotoSelect.value;
+        const numInicial = (tipo==='camera') ? parseInt(fotoInicialCameraInput.value) : parseInt(fotoInicialDroneInput.value);
+        const qtd = parseInt(qtdFotosInput.value) || 0;
+        const numFinal = isNaN(numInicial) || isNaN(qtd) ? '' : numInicial + qtd - 1;
+        fotoInicialHidden.value = numInicial;
+        fotoInfo.textContent = `Fotos (${tipo}): ${numInicial || '?'} a ${numFinal || '?'}`;
+      }
+      function toggleContadorInputs() {
+        document.getElementById('contador_camera_group').classList.toggle('hidden', tipoFotoSelect.value !== 'camera');
+        document.getElementById('contador_drone_group').classList.toggle('hidden', tipoFotoSelect.value !== 'drone');
+        updatePhotoInfo();
+      }
+      tipoFotoSelect.addEventListener('change', toggleContadorInputs);
+      [qtdFotosInput, fotoInicialCameraInput, fotoInicialDroneInput].forEach(i => i.addEventListener('input', updatePhotoInfo));
+      function updateContadorStorage(tipo, valor) {
+        if (!appState.activeInspecaoId) return;
+        const inspecao = appState.db[appState.activeInspecaoId];
+        if (inspecao && !appState.editingRecordId) { inspecao.contadores[tipo] = parseInt(valor) || 1; saveDb(); }
+      }
+      fotoInicialCameraInput.addEventListener('change', ()=>updateContadorStorage('camera', fotoInicialCameraInput.value));
+      fotoInicialDroneInput.addEventListener('change', ()=>updateContadorStorage('drone',  fotoInicialDroneInput.value));
+
+      // Submit
+      inspectionForm.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        if (!appState.activeInspecaoId) { alert("Nenhuma inspeção ativa. Crie ou selecione uma inspeção primeiro."); return; }
+        saveActiveInspecaoData();
+        const inspecao = appState.db[appState.activeInspecaoId];
+
+        const formData = new FormData(inspectionForm);
+        let newRecordData = {};
+        formData.forEach((v,k)=>{ newRecordData[k]=v; });
+
+        // Nome e sigla do elemento (sempre gravar os dois campos)
+        const optSel = registroFields.elemento.options[registroFields.elemento.selectedIndex];
+        const elemento_nome  = registroFields.elemento.value || '';
+        const elemento_sigla = (optSel && optSel.dataset.sigla) ? optSel.dataset.sigla : (SIGLA_POR_NOME[elemento_nome] || '');
+
+        if (appState.editingRecordId) {
+          const idx = inspecao.registros.findIndex(r => r.id === appState.editingRecordId);
+          if (idx > -1) {
+            const original = inspecao.registros[idx];
+            inspecao.registros[idx] = {
+              ...original,
+              ...newRecordData,
+              elemento_nome,
+              elemento_sigla
+            };
+            let anomaliaField = inspecao.registros[idx].anomalia;
+            if (!anomaliaField) inspecao.registros[idx].anomalia = "Foto Geral";
+            else {
+              const ao = document.querySelector(`#anomalia option[value="${anomaliaField}"]`);
+              if (ao) inspecao.registros[idx].anomalia = ao.textContent;
             }
-          } catch(e){}
+          }
+          alert('Registro atualizado com sucesso!');
+          cancelEditBtn.click();
+        } else {
+          newRecordData.id = Date.now().toString();
+          // normaliza anomalia para o texto exibido
+          if (!newRecordData.anomalia) newRecordData.anomalia = "Foto Geral";
+          else {
+            const ao = document.querySelector(`#anomalia option[value="${newRecordData.anomalia}"]`);
+            if (ao) newRecordData.anomalia = ao.textContent;
+          }
+          // adiciona os campos de elemento
+          newRecordData.elemento_nome = elemento_nome;
+          newRecordData.elemento_sigla = elemento_sigla;
 
-          return { dadosGerais, caracteristicas, registroAtual, ultimaInspecao };
+          inspecao.registros.push(newRecordData);
+
+          // Atualiza contador de fotos
+          const tipoFoto = newRecordData.tipo_foto;
+          const novoContador = parseInt(newRecordData.fotoInicial) + parseInt(newRecordData.qtdFotos);
+          inspecao.contadores[tipoFoto] = novoContador;
+          if (tipoFoto === 'camera') fotoInicialCameraInput.value = novoContador;
+          else fotoInicialDroneInput.value = novoContador;
+
+          alert('Registro salvo com sucesso!');
         }
 
-        // Chamada à API (streaming)
-        askAiBtn.addEventListener('click', async () => {
-          if (!navigator.onLine) { alert('Você está offline. A IA precisa de internet.'); return; }
-          const prompt = (aiPrompt.value || '').trim();
-          if (!prompt) { alert('Escreva sua pergunta ou use um atalho.'); return; }
+        saveDb();
 
-          aiOutput.textContent = '⏳ Processando...';
-          const contexto = coletarContexto();
+        // Limpa campos de registro (mantém select de elementos)
+        ['numero_elemento','face','vao','vista','comprimento','largura','abertura','observacoes'].forEach(k=>{
+          if (registroFields[k]) registroFields[k].value = '';
+        });
+        registroFields.elemento.value = ''; // limpa escolha do elemento
+        updatePhotoInfo();
+        loadRegistros(inspecao.registros);
+      });
 
-          const systemPrompt = `
+      // Exportação (3 abas). Registros agora têm 2 colunas de elemento
+      exportButton.addEventListener('click', ()=>{
+        if (!appState.activeInspecaoId) { alert("Nenhuma inspeção ativa para exportar."); return; }
+        const inspecao = appState.db[appState.activeInspecaoId];
+        const registros = inspecao.registros;
+        if (registros.length === 0) { alert('Nenhum registro para exportar nesta inspeção.'); return; }
+
+        // 1. Dados Gerais
+        const dadosGeraisHeaders = ['Concessionária','Rodovia','KM','Latitude','Longitude','Nome da Obra','Sentido','Data','Inspetor'];
+        const dadosGeraisData = [[
+          inspecao.dadosGerais.concessionaria || '',
+          inspecao.dadosGerais.rodovia || '',
+          inspecao.dadosGerais.km || '',
+          inspecao.dadosGerais.latitude || '',
+          inspecao.dadosGerais.longitude || '',
+          inspecao.dadosGerais.nome_obra || '',
+          inspecao.dadosGerais.sentido || '',
+          inspecao.dadosGerais.data || '',
+          inspecao.dadosGerais.inspetor || ''
+        ]];
+        const wsDadosGerais = XLSX.utils.aoa_to_sheet([dadosGeraisHeaders, ...dadosGeraisData]);
+
+        // 2. Características Gerais
+        const caracteristicasHeaders = [
+          'Comprimento total (m)','Largura total (m)','Largura útil (m)','Sentido crescente',
+          'Quantidade de vãos','Pilares','Juntas de dilatação','Vãos-tipo','Tabuleiro-tipo',
+          'Tipologia longitudinal (Superestrutura)','Tipologia transversal (Superestrutura)',
+          'Tipologia da mesoestrutura','Tipologia da infraestrutura',
+          'Sistemas construtivos','Natureza da transposição','Materiais',
+          'Quantidade de aparelhos de apoio','Gabarito vertical sob a OAE (m)',
+          'Gabarito vertical sobre a OAE (m)','Gabarito navegável — Altura (m)','Gabarito navegável — Largura (m)'
+        ];
+        const cg = inspecao.dadosGerais;
+        const caracteristicasData = [[
+          cg.comprimento_total || '', cg.largura_total || '', cg.largura_util || '', cg.sentido_crescente || '',
+          cg.qtd_vaos || '', cg.pilares || '', cg.juntas_dilatacao || '', cg.vaos_tipo || '', cg.tabuleiro_tipo || '',
+          cg.tipologia_longitudinal || '', cg.tipologia_transversal || '', cg.tipologia_mesoestrutura || '',
+          cg.tipologia_infraestrutura || '', cg.sistemas_construtivos || '', cg.natureza_transposicao || '',
+          cg.materiais || '', cg.qtd_aparelhos_apoio || '', cg.gabarito_vertical_sob || '',
+          cg.gabarito_vertical_sobre || '', cg.gabarito_navegavel_altura || '', cg.gabarito_navegavel_largura || ''
+        ]];
+        const wsCaracteristicas = XLSX.utils.aoa_to_sheet([caracteristicasHeaders, ...caracteristicasData]);
+
+        // 3. Registros (com Elemento por extenso + Sigla)
+        const registrosHeaders = [
+          'ID','Elemento (por extenso)','Sigla','Número do Elemento','Face','Vão','Vista','Anomalia',
+          'Comprimento (m)','Largura (m)','Abertura Fissura','Tipo de Foto',
+          'Foto Inicial','Foto Final','Qtd Fotos','Observações'
+        ];
+        const registrosData = registros.map(r=>{
+          const fotoFinal = parseInt(r.fotoInicial) + parseInt(r.qtdFotos) - 1;
+          const elNome = resolveElementoNome(r) || '';
+          const elSigla = resolveElementoSigla(r) || '';
+          return [
+            r.id,
+            elNome,
+            elSigla,
+            r.numero_elemento,
+            r.face || '',
+            r.vao || '',
+            r.vista || '',
+            r.anomalia || '',
+            r.comprimento || '',
+            r.largura || '',
+            r.abertura || '',
+            r.tipo_foto,
+            r.fotoInicial,
+            fotoFinal,
+            r.qtdFotos,
+            (r.observacoes || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          ];
+        });
+        const wsRegistros = XLSX.utils.aoa_to_sheet([registrosHeaders, ...registrosData]);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, wsDadosGerais, "Dados Gerais");
+        XLSX.utils.book_append_sheet(wb, wsCaracteristicas, "Características Gerais");
+        XLSX.utils.book_append_sheet(wb, wsRegistros, "Registros");
+
+        const nomeArquivo = `inspecao_${appState.activeInspecaoId}`.replace(/[^a-zA-Z0-9\-_]/g,'_');
+        XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+      });
+
+      // Import/Template
+      const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+      const importDataBtn = document.getElementById('importDataBtn');
+      const fileInput = document.getElementById('fileInput');
+      const importStatus = document.getElementById('importStatus');
+      const importMessage = document.getElementById('importMessage');
+
+      downloadTemplateBtn.addEventListener('click', ()=>{
+        const headers = ['Concessionária','Nome da Obra','Rodovia','KM+M'];
+        const sample = [
+          ['Concessionária Exemplo','Obra Exemplo','BR-101','50+300'],
+          ['','','',''],['','','',''],['','','',''],['','','','']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet([headers,...sample]);
+        ws['!cols'] = [{width:20},{width:25},{width:15},{width:15}];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Dados Gerais");
+        XLSX.writeFile(wb, 'modelo_dados_gerais.xlsx');
+      });
+
+      importDataBtn.addEventListener('click', ()=> fileInput.click());
+
+      function showImportMessage(message, type) {
+        importMessage.textContent = message;
+        importMessage.style.color = type==='success' ? '#28a745' : type==='warning' ? '#ffc107' : '#dc3545';
+        importMessage.style.background = type==='success' ? '#d4edda' : type==='warning' ? '#fff3cd' : '#f8d7da';
+        importStatus.style.display = 'block';
+        setTimeout(()=>{ importStatus.style.display = 'none'; }, 5000);
+      }
+
+      fileInput.addEventListener('change', (event)=>{
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+          try{
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type:'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header:1 });
+
+            const expectedHeaders = ['Concessionária','Nome da Obra','Rodovia','KM+M'];
+            const headers = jsonData[0];
+            if (!headers || headers.length<4) { showImportMessage('❌ Formato inválido. Use a planilha modelo.','error'); return; }
+            const isValid = expectedHeaders.every((h,i)=> headers[i] && headers[i].toString().toLowerCase().includes(h.toLowerCase()));
+            if (!isValid) { showImportMessage('❌ Cabeçalhos inválidos. Use a planilha modelo.','error'); return; }
+
+            let imported=0, skipped=0;
+            for (let i=1;i<jsonData.length;i++){
+              const row = jsonData[i]; if (!row || row.length<4) continue;
+              const concessionaria = row[0] || '';
+              const nomeObra = row[1] || '';
+              const rodovia = row[2] || '';
+              const km = row[3] || '';
+              if (!rodovia || !km) { skipped++; continue; }
+              const newId = `${rodovia.trim()}_${km.trim()}`.replace(/ /g,'_');
+              if (appState.db[newId]) { skipped++; continue; }
+              appState.db[newId] = {
+                dadosGerais: {
+                  concessionaria, nome_obra:nomeObra, rodovia, km,
+                  data:new Date().toISOString().split('T')[0],
+                  inspetor:'', sentido:'', latitude:'', longitude:'',
+                  comprimento_total:'', largura_total:'', largura_util:'', sentido_crescente:'',
+                  qtd_vaos:'', pilares:'', juntas_dilatacao:'', vaos_tipo:'', tabuleiro_tipo:'',
+                  tipologia_longitudinal:'', tipologia_transversal:'', tipologia_mesoestrutura:'',
+                  tipologia_infraestrutura:'', sistemas_construtivos:'', natureza_transposicao:'',
+                  materiais:'', qtd_aparelhos_apoio:'', gabarito_vertical_sob:'', gabarito_vertical_sobre:'',
+                  gabarito_navegavel_altura:'', gabarito_navegavel_largura:''
+                },
+                contadores:{camera:1, drone:1},
+                registros:[]
+              };
+              imported++;
+            }
+            saveDb(); populateInspecaoSelector();
+
+            if (imported>0){
+              showImportMessage(`✅ ${imported} inspeção(ões) importada(s)!${skipped>0 ? ' '+skipped+' linha(s) ignorada(s).' : ''}`, 'success');
+              const ids = Object.keys(appState.db);
+              if (ids.length>0){ const firstId = ids[0]; inspecaoAtivaSelect.value = firstId; setActiveInspecao(firstId); showTab('dados_gerais', document.querySelector('.tab[data-tab="dados_gerais"]')); }
+            } else showImportMessage('⚠️ Nenhuma inspeção importada. Verifique os dados.','warning');
+
+            fileInput.value = '';
+          }catch(err){
+            console.error(err);
+            showImportMessage('❌ Erro ao processar o arquivo. Verifique o formato.','error');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      // Init
+      const initApp = () => {
+        loadDb(); populateInspecaoSelector();
+        const firstId = Object.keys(appState.db)[0] || null;
+        if (firstId) inspecaoAtivaSelect.value = firstId;
+        setActiveInspecao(firstId);
+      };
+      initApp();
+
+      const deletarTudoBtn = document.getElementById('deletarTudoBtn');
+      if (deletarTudoBtn) {
+        deletarTudoBtn.addEventListener('click', ()=>{
+          if (confirm('Tem certeza que deseja DELETAR TODAS AS INSPEÇÕES? Esta ação é irreversível!')) {
+            localStorage.removeItem('OAE_INSPECTIONS_DB');
+            location.reload();
+          }
+        });
+      }
+    });
+  </script>
+
+  <!-- ===== Service Worker e Offline ===== -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function(registration) {
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  if (confirm('Uma nova versão do aplicativo está disponível. Deseja atualizar agora?')) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                  }
+                }
+              });
+            });
+          })
+          .catch(function(err) { console.log('Falha ao registrar o Service Worker:', err); });
+      });
+    }
+
+    function checkOfflineStatus() {
+      const offlineIndicator = document.getElementById('offlineIndicator');
+      if (!navigator.onLine) { if (offlineIndicator) offlineIndicator.style.display = 'block'; }
+      else { if (offlineIndicator) offlineIndicator.style.display = 'none'; }
+    }
+    window.addEventListener('online',  ()=>{ const i=document.getElementById('offlineIndicator'); if(i) i.style.display='none'; });
+    window.addEventListener('offline', ()=>{ const i=document.getElementById('offlineIndicator'); if(i) i.style.display='block'; });
+    checkOfflineStatus();
+  </script>
+
+  <!-- ===== MODAL DO ASSISTENTE IA ===== -->
+  <div id="aiModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+      <div class="modal-header">
+        <h2 id="aiTitle">Assistente de IA — Inspeção OAE</h2>
+        <span class="close-button" id="closeAiModal" title="Fechar">&times;</span>
+      </div>
+
+      <div id="aiToolbar">
+        <span class="chip" data-template="obs">✍️ Gerar observação</span>
+        <span class="chip" data-template="diag">🧪 Diagnóstico curto</span>
+        <span class="chip" data-template="sug">🧠 Plano de ação</span>
+        <span class="chip" data-template="sum">📋 Resumo técnico</span>
+      </div>
+
+      <textarea id="aiPrompt" rows="5" placeholder="Escreva sua pergunta ou use os atalhos acima..."></textarea>
+      <div class="row-actions">
+        <button id="askAiBtn" class="btn-primary-mini">Perguntar com contexto</button>
+        <button id="pasteAiBtn" class="btn-ghost">📝 Inserir em Observações</button>
+        <button id="copyAiBtn" class="btn-ghost">📋 Copiar</button>
+        <span id="aiOnlineHint" class="small" style="margin-left:auto;"></span>
+      </div>
+
+      <div id="aiOutput" aria-live="polite"></div>
+      <div class="small">O contexto é coletado automaticamente de “Dados Gerais”, “Características” e do registro atual. Se estiver offline, a IA fica desativada.</div>
+    </div>
+  </div>
+
+  <!-- ===== Integração com IA (UI local; sua API própria em /api/ia) ===== -->
+  <script>
+    (function(){
+      const aiModal = document.getElementById('aiModal');
+      const openAiBtn = document.getElementById('openAiBtn');
+      const openAiFromObs = document.getElementById('openAiFromObs');
+      const closeAiModal = document.getElementById('closeAiModal');
+      const aiPrompt = document.getElementById('aiPrompt');
+      const aiOutput = document.getElementById('aiOutput');
+      const askAiBtn = document.getElementById('askAiBtn');
+      const copyAiBtn = document.getElementById('copyAiBtn');
+      const pasteAiBtn = document.getElementById('pasteAiBtn');
+      const aiOnlineHint = document.getElementById('aiOnlineHint');
+
+      const openModal=(prefill='')=>{ aiPrompt.value=prefill; aiOutput.textContent=''; aiModal.style.display='block'; aiModal.setAttribute('aria-hidden','false'); updateOnlineHint(); toggleAskDisabled(); };
+      const closeModal=()=>{ aiModal.style.display='none'; aiModal.setAttribute('aria-hidden','true'); };
+      openAiBtn && openAiBtn.addEventListener('click', ()=>openModal(''));
+      openAiFromObs && openAiFromObs.addEventListener('click', ()=>openModal('Gerar uma OBSERVAÇÃO técnica (3–6 linhas) com base nos campos preenchidos.'));
+      closeAiModal && closeAiModal.addEventListener('click', closeModal);
+      aiModal && aiModal.addEventListener('click', (e)=>{ if(e.target===aiModal) closeModal(); });
+
+      document.querySelectorAll('#aiToolbar .chip').forEach(chip=>{
+        chip.addEventListener('click', ()=>{
+          const t = chip.getAttribute('data-template');
+          let txt='';
+          if (t==='obs') txt='Gerar OBSERVAÇÃO técnica (3–6 linhas) considerando: elemento/vão/face/vista, anomalia, severidade (se houver), causa provável e recomendação curta.';
+          else if (t==='diag') txt='Produzir DIAGNÓSTICO curto (4–8 linhas) descrevendo o quadro e possíveis implicações estruturais, de acordo com a anomalia.';
+          else if (t==='sug') txt='Sugerir um PLANO DE AÇÃO objetivo (monitorar / corrigir / intervenção) e justificar em 2–3 pontos.';
+          else if (t==='sum') txt='Escrever um RESUMO técnico (até 8 linhas) consolidando dados gerais, características e registro atual.';
+          aiPrompt.value = txt;
+        });
+      });
+
+      function updateOnlineHint(){ aiOnlineHint.textContent = navigator.onLine ? '🟢 Online' : '🔴 Offline'; }
+      function toggleAskDisabled(){ askAiBtn.disabled = !navigator.onLine; askAiBtn.title = navigator.onLine ? '' : 'Sem conexão. A IA exige internet.'; }
+      window.addEventListener('online', ()=>{ updateOnlineHint(); toggleAskDisabled(); });
+      window.addEventListener('offline',()=>{ updateOnlineHint(); toggleAskDisabled(); });
+
+      function v(id){ const el=document.getElementById(id); return el ? (el.value||'') : ''; }
+
+      function coletarContexto(){
+        const dadosGerais = {
+          concessionaria:v('concessionaria'), rodovia:v('rodovia'), km:v('km'),
+          nome_obra:v('nome_obra'), sentido:v('sentido'), data:v('data'),
+          inspetor:v('inspetor'), latitude:v('latitude'), longitude:v('longitude')
+        };
+        const caracteristicas = {
+          comprimento_total:v('comprimento_total'), largura_total:v('largura_total'), largura_util:v('largura_util'),
+          sentido_crescente:v('sentido_crescente'), qtd_vaos:v('qtd_vaos'), pilares:v('pilares'),
+          juntas_dilatacao:v('juntas_dilatacao'), vaos_tipo:v('vaos_tipo'), tabuleiro_tipo:v('tabuleiro_tipo'),
+          tipologia_longitudinal:v('tipologia_longitudinal'), tipologia_transversal:v('tipologia_transversal'),
+          tipologia_mesoestrutura:v('tipologia_mesoestrutura'), tipologia_infraestrutura:v('tipologia_infraestrutura'),
+          sistemas_construtivos:v('sistemas_construtivos'), natureza_transposicao:v('natureza_transposicao'),
+          materiais:v('materiais'), qtd_aparelhos_apoio:v('qtd_aparelhos_apoio'),
+          gabarito_vertical_sob:v('gabarito_vertical_sob'), gabarito_vertical_sobre:v('gabarito_vertical_sobre'),
+          gabarito_navegavel_altura:v('gabarito_navegavel_altura'), gabarito_navegavel_largura:v('gabarito_navegavel_largura')
+        };
+
+        const elemento_nome = v('elemento');
+        const elemento_sigla = (function(){
+          const sel = document.getElementById('elemento');
+          const opt = sel ? sel.options[sel.selectedIndex] : null;
+          return opt ? (opt.dataset.sigla || '') : (SIGLA_POR_NOME[elemento_nome] || '');
+        })();
+
+        const registroAtual = {
+          elemento_nome, elemento_sigla,
+          numero_elemento:v('numero_elemento'), vao:v('vao'), face:v('face'), vista:v('vista'),
+          anomalia:(function(){ const sel=document.getElementById('anomalia'); const opt=sel?sel.options[sel.selectedIndex]:null; return opt?opt.textContent:''; })(),
+          comprimento:v('comprimento'), largura:v('largura'), abertura:v('abertura'),
+          tipo_foto:v('tipo_foto'), qtd_fotos:v('qtdFotos'), foto_inicial:v('fotoInicial'),
+          observacoes_digitadas:v('observacoes')
+        };
+
+        let ultimaInspecao=null;
+        try{
+          const db = JSON.parse(localStorage.getItem('OAE_INSPECTIONS_DB')||'{}');
+          const activeId = (document.getElementById('inspecaoAtiva')||{}).value || null;
+          if (activeId && db[activeId]){
+            const regs=db[activeId].registros||[];
+            ultimaInspecao={ id:activeId, contadores:db[activeId].contadores||{}, total_registros:regs.length, ultimos_registros:regs.slice(-5) };
+          }
+        }catch(e){}
+
+        return { dadosGerais, caracteristicas, registroAtual, ultimaInspecao };
+      }
+
+      askAiBtn.addEventListener('click', async ()=>{
+        if (!navigator.onLine) { alert('Você está offline. A IA precisa de internet.'); return; }
+        const prompt = (document.getElementById('aiPrompt').value||'').trim();
+        if (!prompt) { alert('Escreva sua pergunta ou use um atalho.'); return; }
+
+        aiOutput.textContent = '⏳ Processando...';
+        const contexto = coletarContexto();
+
+        const systemPrompt = `
 Você é um assistente técnico de inspeções de OAEs no Brasil.
 - Estilo: objetivo, técnico e claro; 3–8 linhas quando não especificado.
 - Não invente normas/valores; evite marcas.
@@ -1442,52 +1598,39 @@ Você é um assistente técnico de inspeções de OAEs no Brasil.
 - Se contexto estiver incompleto, diga educadamente o que falta.
 `.trim();
 
-          try {
-            const res = await fetch('/api/ia', {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({ system: systemPrompt, prompt, context: contexto })
-            });
-
-            if (!res.ok || !res.body) {
-              aiOutput.textContent = '❌ Erro ao chamar /api/ia';
-              return;
-            }
-
-            const reader = res.body.getReader();
-            aiOutput.textContent = '';
-            const decoder = new TextDecoder();
-
-            while (true) {
-              const {value, done} = await reader.read();
-              if (done) break;
-              aiOutput.textContent += decoder.decode(value, {stream:true});
-            }
-          } catch (err) {
-            console.error(err);
-            aiOutput.textContent = '❌ Falha de conexão com o servidor de IA.';
+        try{
+          const res = await fetch('/api/ia', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ system: systemPrompt, prompt, context: contexto })
+          });
+          if (!res.ok || !res.body) { aiOutput.textContent='❌ Erro ao chamar /api/ia'; return; }
+          const reader = res.body.getReader(); aiOutput.textContent='';
+          const decoder = new TextDecoder();
+          while(true){
+            const {value, done} = await reader.read();
+            if (done) break;
+            aiOutput.textContent += decoder.decode(value, {stream:true});
           }
-        });
+        }catch(err){
+          console.error(err);
+          aiOutput.textContent = '❌ Falha de conexão com o servidor de IA.';
+        }
+      });
 
-        // Copiar
-        copyAiBtn.addEventListener('click', async () => {
-          try {
-            await navigator.clipboard.writeText(aiOutput.textContent || '');
-            alert('Resposta copiada!');
-          } catch(e){ alert('Não foi possível copiar.'); }
-        });
-
-        // Inserir no campo Observações
-        pasteAiBtn.addEventListener('click', () => {
-          const out = aiOutput.textContent || '';
-          const obs = document.getElementById('observacoes');
-          if (!obs) { alert('Campo "Observações" não encontrado.'); return; }
-          if (!out) { alert('Gere uma resposta da IA primeiro.'); return; }
-          obs.value = out;
-          alert('Texto inserido em "Observações".');
-          closeModal();
-        });
-      })();
-    </script>
+      copyAiBtn.addEventListener('click', async ()=>{
+        try { await navigator.clipboard.writeText(aiOutput.textContent||''); alert('Resposta copiada!'); }
+        catch(e){ alert('Não foi possível copiar.'); }
+      });
+      pasteAiBtn.addEventListener('click', ()=>{
+        const out = aiOutput.textContent||'';
+        const obs = document.getElementById('observacoes');
+        if (!obs) { alert('Campo "Observações" não encontrado.'); return; }
+        if (!out) { alert('Gere uma resposta da IA primeiro.'); return; }
+        obs.value = out; alert('Texto inserido em "Observações".');
+        aiModal.style.display='none'; aiModal.setAttribute('aria-hidden','true');
+      });
+    })();
+  </script>
 </body>
 </html>
