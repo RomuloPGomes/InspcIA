@@ -1,0 +1,2 @@
+# Dependências para o servidor Python
+# Nenhuma dependência externa necessária - usa apenas bibliotecas padrão do Python
