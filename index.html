@@ -16,7 +16,6 @@
     .header { background: linear-gradient(135deg,#2c3e50 0%,#3498db 100%); color: white; padding: 20px; text-align: center; position: relative; }
     .header h1 { font-size: 1.8em; margin-bottom: 5px; position: relative; z-index: 1; }
     .header p { opacity: 0.9; position: relative; z-index: 1; }
-    #openAiBtn { position:absolute; right:12px; top:12px; background:#e8f4f8; color:#0d6efd; border:none; border-radius:20px; padding:6px 12px; cursor:pointer; font-weight:600; }
 
     .main-content { padding: 20px; max-height: 80vh; overflow-y: auto; }
     .section { margin-bottom: 25px; padding: 20px; border-radius: 15px; background:#f8f9fa; border-left: 4px solid #3498db; }
@@ -29,6 +28,9 @@
     input, select, textarea { width:100%; padding:10px; border:2px solid #e9ecef; border-radius:8px; font-size:14px; transition: border-color .3s ease; }
     input:focus, select:focus, textarea:focus { outline: none; border-color:#3498db; box-shadow:0 0 0 3px rgba(52,152,219,.1); }
     select { background: white; cursor: pointer; }
+
+    .filter-input { width:100%; margin:6px 0 8px; padding:8px 10px; border:1px dashed #cfd8dc; border-radius:8px; font-size:13px; }
+    .small-hint { font-size:12px; color:#6b7280; margin-top:6px; }
 
     .btn, .btn-primary, .btn-secondary, .btn-warning, .btn-filter, .btn-location { border-radius:50px; font-weight:600; cursor:pointer; transition: all .3s ease; border:none; padding:12px 25px; font-size:14px; text-align:center; }
     .btn-primary { background: linear-gradient(135deg,#27ae60,#2ecc71); color:white; width:100%; margin-top:20px; text-transform: uppercase; letter-spacing:.5px; font-size:16px; padding:15px 30px; }
@@ -46,7 +48,7 @@
     .copy-coords input { background:#e9ecef; }
     .copy-coords button { padding:10px 15px; font-size:12px; flex-shrink:0; }
 
-    .filter-buttons { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:15px; }
+    .filter-buttons { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
     .btn-filter { padding:5px 10px; font-size:12px; background:#e9ecef; color:#495057; }
     .btn-filter.active { background:#3498db; color:white; }
 
@@ -84,18 +86,6 @@
 
     .footer { text-align:center; padding:15px; background:#f8f9fa; border-top:1px solid #eee; }
     .footer p { color:#888; font-size:12px; }
-
-    /* Modal IA */
-    #aiModal .modal-content { max-width: 900px; }
-    #aiToolbar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 6px; }
-    .chip { border:1px solid #e5e7eb; background:#f9fafb; padding:6px 10px; border-radius:999px; cursor:pointer; font-size:13px; }
-    .chip:hover { background:#eef2ff; }
-    #aiPrompt { width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
-    #aiOutput { border:1px solid #e5e7eb; border-radius:10px; padding:12px; margin-top:10px; min-height:120px; white-space:pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
-    .row-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
-    .btn-ghost { background:#f3f4f6; border:none; padding:8px 14px; border-radius:999px; cursor:pointer; }
-    .btn-primary-mini { background:#2563eb; color:#fff; border:none; padding:8px 14px; border-radius:999px; cursor:pointer; }
-    .small { font-size:12px; color:#6b7280; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -104,7 +94,7 @@
     <div class="header">
       <h1>🔍 Inspeção OAE</h1>
       <p>Gerenciador Offline de Inspeções</p>
-      <button id="openAiBtn" type="button">🤖 Assistente</button>
+
       <div id="offlineIndicator" style="display:none; background:rgba(255,255,255,.2); padding:5px 10px; border-radius:15px; margin-top:10px; font-size:12px;">
         📱 Funcionando Offline
       </div>
@@ -201,9 +191,9 @@
                 <button type="button" class="btn btn-link" id="abrirModalLegendas">Consultar Legendas</button>
               </div>
 
-              <!-- Select de elementos será preenchido via JS com nomes por extenso -->
               <div class="form-group">
                 <label for="elemento">Elemento:</label>
+                <input type="text" id="elementoFilter" class="filter-input" placeholder="🔎 Digite para filtrar elementos...">
                 <select id="elemento" name="elemento" required>
                   <option value="">Carregando...</option>
                 </select>
@@ -247,6 +237,16 @@
                   </select>
                 </div>
               </div>
+
+              <div id="sentido_pista_group" class="form-group hidden">
+                <label for="sentido_pista">Sentido da pista (para Pista/PF/PR):</label>
+                <select id="sentido_pista" name="sentido_pista">
+                  <option value="">Selecione...</option>
+                  <option value="Norte">Norte</option><option value="Sul">Sul</option>
+                  <option value="Leste">Leste</option><option value="Oeste">Oeste</option>
+                </select>
+                <div class="small-hint">Este campo aparece somente quando o elemento é <strong>Pista</strong>, <strong>Pavimento flexível</strong> ou <strong>Pavimento rígido</strong>.</div>
+              </div>
             </div>
 
             <div class="section">
@@ -262,6 +262,7 @@
 
               <div class="form-group">
                 <label for="anomalia">Anomalia (Opcional):</label>
+                <input type="text" id="anomaliaFilter" class="filter-input" placeholder="🔎 Digite para filtrar anomalias...">
                 <select id="anomalia" name="anomalia">
                   <option value="">Selecione...</option>
                   <optgroup label="1. CONCRETO">
@@ -317,20 +318,20 @@
                     <option data-category="pavimentacao" value="3.9">3.9 - Deterioração dos lábios poliméricos</option>
                     <option data-category="pavimentacao" value="3.10">3.10 - Deterioração dos berços na junta de dilatação</option>
                     <option data-category="pavimentacao" value="3.11">3.11 - Acúmulo de detritos na junta de dilatação</option>
-                    <option data-category="pavimentacao" value="3.12">Perfil elastomérico com descolamento, rasgos ressecamento ou deslocamento</option>
-                    <option data-category="pavimentacao" value="3.13">Abertura excessiva da junta de dilatação</option>
-                    <option data-category="pavimentacao" value="3.14">Trincas</option>
-                    <option data-category="pavimentacao" value="3.15">Fissuras</option>
-                    <option data-category="pavimentacao" value="3.16">Panela</option>
-                    <option data-category="pavimentacao" value="3.17">Exsudação</option>
-                    <option data-category="pavimentacao" value="3.18">Defeitos nos trilhos (ondulações e desgastes)</option>
-                    <option data-category="pavimentacao" value="3.19">Falha de adensamento do lastro</option>
-                    <option data-category="pavimentacao" value="3.20">Dormentes soltos, ausentes ou danificados</option>
-                    <option data-category="pavimentacao" value="3.21">Fixações danificadas</option>
-                    <option data-category="pavimentacao" value="3.22">Trilhos desalinhados em região de junta</option>
-                    <option data-category="pavimentacao" value="3.23">Espessura excessiva do lastro</option>
-                    <option data-category="pavimentacao" value="3.24">Trincas tipo "couro de jacaré"</option>
-                    <option data-category="pavimentacao" value="3.25">Dano em pavimento rígido</option>
+                    <option data-category="pavimentacao" value="3.12">3.12 -  Perfil elastomérico com descolamento, rasgos ressecamento ou deslocamento</option>
+                    <option data-category="pavimentacao" value="3.13">3.13 - Abertura excessiva da junta de dilatação</option>
+                    <option data-category="pavimentacao" value="3.14">3.14 - Trincas</option>
+                    <option data-category="pavimentacao" value="3.15">3.15 - Fissuras</option>
+                    <option data-category="pavimentacao" value="3.16">3.16 - Panela</option>
+                    <option data-category="pavimentacao" value="3.17">3.17 - Exsudação</option>
+                    <option data-category="pavimentacao" value="3.18">3.18 - Defeitos nos trilhos (ondulações e desgastes)</option>
+                    <option data-category="pavimentacao" value="3.19">3.19 - Falha de adensamento do lastro</option>
+                    <option data-category="pavimentacao" value="3.20">3.20 - Dormentes soltos, ausentes ou danificados</option>
+                    <option data-category="pavimentacao" value="3.21">3.21 - Fixações danificadas</option>
+                    <option data-category="pavimentacao" value="3.22">3.22 - Trilhos desalinhados em região de junta</option>
+                    <option data-category="pavimentacao" value="3.23">3.23 - Espessura excessiva do lastro</option>
+                    <option data-category="pavimentacao" value="3.24">3.24 - Trincas tipo "couro de jacaré"</option>
+                    <option data-category="pavimentacao" value="3.25">3.25 - Dano em pavimento rígido</option>
                   </optgroup>
                   <optgroup label="4. APARELHOS DE APOIO">
                     <option data-category="apoios" value="4.1">4.1 - Ausência de aparelho de apoio</option>
@@ -344,10 +345,10 @@
                     <option data-category="apoios" value="4.9">4.9 - Deformações laterais excessivas</option>
                     <option data-category="apoios" value="4.10">4.10 - Deslocamentos</option>
                     <option data-category="apoios" value="4.11">4.11 - Distorção excessiva</option>
-                    <option data-category="apoios" value="4.12">Peças de aço oxidadas e expostas</option>
-                    <option data-category="apoios" value="4.13">Descolamento da fretagem</option>
-                    <option data-category="apoios" value="4.14">Assentamento irregular com concentração de esforços</option>
-                    <option data-category="apoios" value="4.15">Deterioração do berço de assentamento e de nivelamento superior</option>
+                    <option data-category="apoios" value="4.12">4.12 - Peças de aço oxidadas e expostas</option>
+                    <option data-category="apoios" value="4.13">4.13 - Descolamento da fretagem</option>
+                    <option data-category="apoios" value="4.14">4.14 - Assentamento irregular com concentração de esforços</option>
+                    <option data-category="apoios" value="4.15">4.15 - Deterioração do berço de assentamento e de nivelamento superior</option>
                   </optgroup>
                 </select>
               </div>
@@ -358,7 +359,7 @@
               </div>
 
               <div class="form-group">
-                <label for="abertura">Abertura de Fissuras:</label>
+                <label for="abertura">Abertura de Fissuras <span id="aberturaLabelHint" class="small-hint" style="display:none;color:#c0392b;">(obrigatória para Fissuras/Trincas)</span>:</label>
                 <select id="abertura" name="abertura">
                   <option value="">Selecione...</option>
                   <script>
@@ -368,6 +369,7 @@
                     }
                   </script>
                 </select>
+                <div id="aberturaHint" class="small-hint" style="display:none;color:#c0392b;">Informe a abertura quando a anomalia envolver fissuras ou trincas.</div>
               </div>
             </div>
 
@@ -394,9 +396,7 @@
 
             <div class="section">
               <div class="section-header">
-                <h3><span class="icon">📝</span> Observações
-                  <button type="button" id="openAiFromObs" class="btn btn-link" style="margin-left:8px;">🧠 Preencher com IA</button>
-                </h3>
+                <h3><span class="icon">📝</span> Observações</h3>
               </div>
               <div class="form-group">
                 <label for="observacoes">Observações Adicionais:</label>
@@ -653,7 +653,6 @@
   <script>
     // ====== 1) MAPA DE ELEMENTOS (sigla <-> nome) ======
     const ELEMENTOS_MAP = [
-      // Com sigla oficial:
       {sigla:'AA', nome:'Aparelho de apoio'},
       {sigla:'AB', nome:'Abóbada'},
       {sigla:'AC', nome:'Acesso'},
@@ -708,36 +707,39 @@
       {sigla:'VLT',nome:'Viga longarina de travessia'},
       {sigla:'VT', nome:'Viga transversina'},
       {sigla:'VTR',nome:'Viga travessa'},
-      {sigla:'VTRAV',nome:'Viga de travamento'},
-
-      // Itens sem sigla oficial (mantidos por extenso):
-      {sigla:'', nome:'FOTO CAPA PANORÂMICA'},
-      {sigla:'', nome:'BLOCO DE ANCORAGEM'},
-      {sigla:'', nome:'CABO DE PROTENSÃO'},
-      {sigla:'', nome:'JANELA'},
-      {sigla:'', nome:'JUNTA JUSANTE'},
-      {sigla:'', nome:'PINGADEIRA'},
-      {sigla:'', nome:'PISTA'},
-      {sigla:'', nome:'PLACA DE FECHAMENTO'},
-      {sigla:'', nome:'RAMPA'},
-      {sigla:'SV-BARREIRAS', nome:'Sinalização Vertical — Barreiras'},
-      {sigla:'SV-GABARITO',  nome:'Sinalização Vertical — Gabarito'},
-      {sigla:'', nome:'TESTEIRA'},
-      {sigla:'', nome:'TRAVESSIA'},
-      {sigla:'', nome:'TRECHO'},
-      {sigla:'', nome:'TUBO ARMCO'},
-      {sigla:'', nome:'TUBULAÇÃO DE UTILIDADES'},
-      {sigla:'', nome:'FINAL DE INSPEÇÃO'},
-      // "L" isolado no antigo select: assumiremos "Laje" (sem sigla específica)
-      {sigla:'', nome:'Laje'}
+      {sigla:'VTRAV',nome:'Viga de travamento'}
     ];
+
+    // === Itens sem sigla oficial (mantidos por extenso) — ATUALIZADO ===
+    const ELEMENTOS_SEM_SIGLA = [
+      { sigla: '',              nome: 'Vista Geral' },
+      { sigla: '',              nome: 'Bloco de Ancoragem' },
+      { sigla: '',              nome: 'Cabo de Protensão' },
+      { sigla: '',              nome: 'Janela' },
+      { sigla: '',              nome: 'Junta' },
+      { sigla: '',              nome: 'Pingadeira' },
+      { sigla: '',              nome: 'Pista' },
+      { sigla: '',              nome: 'Placa de Fechamento' },
+      { sigla: '',              nome: 'Rampa' },
+      { sigla: 'SV-BARREIRAS',  nome: 'Sinalização Vertical — Barreiras' },
+      { sigla: 'SV-GABARITO',   nome: 'Sinalização Vertical — Gabarito' },
+      { sigla: '',              nome: 'Testeira' },
+      { sigla: '',              nome: 'Travessia' },
+      { sigla: '',              nome: 'Trecho' },
+      { sigla: '',              nome: 'Tubo Armco' },
+      { sigla: '',              nome: 'Tubulação de utilidade' },
+      { sigla: '',              nome: 'Laje' }
+    ];
+
+    // Usar combinado para UI e mapeamentos
+    const ELEMENTOS_TODOS = [...ELEMENTOS_MAP, ...ELEMENTOS_SEM_SIGLA];
 
     const SIGLA_POR_NOME = {};
     const NOME_POR_SIGLA = {};
-    ELEMENTOS_MAP.forEach(e => {
+    for (const e of ELEMENTOS_TODOS) {
       SIGLA_POR_NOME[e.nome] = e.sigla || '';
       if (e.sigla) NOME_POR_SIGLA[e.sigla] = e.nome;
-    });
+    }
 
     // ====== 2) UI/TABS ======
     function showTab(tabName, element) {
@@ -809,8 +811,12 @@
         comprimento: document.getElementById('comprimento'),
         largura: document.getElementById('largura'),
         abertura: document.getElementById('abertura'),
-        observacoes: document.getElementById('observacoes')
+        observacoes: document.getElementById('observacoes'),
+        sentido_pista: document.getElementById('sentido_pista')
       };
+
+      const elementoFilterInput = document.getElementById('elementoFilter');
+      const anomaliaFilterInput = document.getElementById('anomaliaFilter');
 
       const tipoFotoSelect = document.getElementById('tipo_foto');
       const qtdFotosInput = document.getElementById('qtdFotos');
@@ -830,34 +836,110 @@
       const anomaliaOptions = Array.from(anomaliaSelect.options);
       const filterButtons = document.querySelectorAll('#anomalia-filters .btn-filter');
 
+      const sentidoPistaGroup = document.getElementById('sentido_pista_group');
+      const faceSelect = document.getElementById('face');
+      const aberturaSelect = document.getElementById('abertura');
+      const aberturaHint = document.getElementById('aberturaHint');
+      const aberturaLabelHint = document.getElementById('aberturaLabelHint');
+
       // ===== 2.1) Preenche o SELECT de elementos com nomes por extenso =====
       function buildElementoOptions() {
         const sel = registroFields.elemento;
         sel.innerHTML = '<option value="">Selecione...</option>';
-        const arr = ELEMENTOS_MAP.slice().sort((a,b)=> a.nome.localeCompare(b.nome,'pt'));
+        const arr = ELEMENTOS_TODOS.slice().sort((a,b)=> a.nome.localeCompare(b.nome,'pt'));
         for (const e of arr) {
           const opt = document.createElement('option');
           opt.textContent = e.nome;
-          opt.value = e.nome;           // valor por extenso
-          opt.dataset.sigla = e.sigla;  // guarda sigla
+          opt.value = e.nome;
+          opt.dataset.sigla = e.sigla;  // '' quando não houver
+          opt.dataset.search = e.nome.toLowerCase();
           sel.appendChild(opt);
         }
       }
       buildElementoOptions();
+
+      // ====== FILTRO DE LISTAS (Elemento / Anomalia) ======
+      function filterSelect(selectEl, term) {
+        const t = (term||'').toLowerCase().trim();
+        const options = Array.from(selectEl.options);
+        let firstMatch = null;
+
+        options.forEach((opt, idx) => {
+          if (idx === 0) { opt.style.display = ''; return; } // "Selecione..."
+          // Para anomalia com optgroups
+          if (opt.tagName.toLowerCase() !== 'option') return;
+
+          const text = (opt.textContent || '').toLowerCase();
+          const match = text.includes(t);
+          // Se existir filtro por categoria (aplicado em data-category e já oculto), mantemos display se match
+          if (match) {
+            opt.style.display = '';
+            if (!firstMatch) firstMatch = opt;
+          } else {
+            opt.style.display = 'none';
+          }
+        });
+
+        // Esconde optgroups sem itens visíveis
+        const groups = selectEl.querySelectorAll('optgroup');
+        groups.forEach(g=>{
+          const anyVisible = Array.from(g.children).some(c => c.style.display !== 'none');
+          g.style.display = anyVisible ? '' : 'none';
+        });
+
+        return firstMatch;
+      }
+
+      elementoFilterInput.addEventListener('input', ()=>{
+        const first = filterSelect(registroFields.elemento, elementoFilterInput.value);
+        // não alteramos o valor automaticamente; usuário escolhe
+      });
+      elementoFilterInput.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const first = filterSelect(registroFields.elemento, elementoFilterInput.value);
+          if (first) { registroFields.elemento.value = first.value; registroFields.elemento.dispatchEvent(new Event('change')); }
+        }
+      });
+
+      let anomaliaCategory = 'todos';
+      function applyAnomaliaFilters(){
+        const term = anomaliaFilterInput.value.toLowerCase().trim();
+        const options = Array.from(anomaliaSelect.options);
+        options.forEach((opt, idx)=>{
+          if (idx===0) { opt.style.display=''; return; }
+          const text = (opt.textContent||'').toLowerCase();
+          const cat = opt.dataset.category;
+          const byCat = (anomaliaCategory==='todos' || anomaliaCategory===cat);
+          const byTerm = (!term || text.includes(term));
+          opt.style.display = (byCat && byTerm) ? '' : 'none';
+        });
+        // esconde optgroups vazios
+        anomaliaSelect.querySelectorAll('optgroup').forEach(g=>{
+          const anyVisible = Array.from(g.children).some(c => c.style.display !== 'none');
+          g.style.display = anyVisible ? '' : 'none';
+        });
+      }
+      anomaliaFilterInput.addEventListener('input', applyAnomaliaFilters);
+      anomaliaFilterInput.addEventListener('keydown', (e)=>{
+        if (e.key==='Enter'){
+          e.preventDefault();
+          // Seleciona o primeiro visível
+          const opt = Array.from(anomaliaSelect.querySelectorAll('option')).find(o => o.value && o.style.display !== 'none');
+          if (opt){ anomaliaSelect.value = opt.value; anomaliaSelect.dispatchEvent(new Event('change')); }
+        }
+      });
 
       // ===== Modal legendas =====
       btnAbrirModal.onclick = () => { modal.style.display = "block"; };
       spanCloseModal.onclick = () => { modal.style.display = "none"; };
       window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
 
-      // ===== Filtro de anomalias =====
+      // ===== Filtro de anomalias por categoria =====
       function filterAnomalias(category) {
+        anomaliaCategory = category;
         anomaliaSelect.value = '';
-        anomaliaOptions.forEach(option => {
-          if (option.value === '') { option.style.display = ''; return; }
-          const optionCategory = option.dataset.category;
-          option.style.display = (category === 'todos' || category === optionCategory) ? '' : 'none';
-        });
+        applyAnomaliaFilters();
         filterButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.category === category));
       }
       filterButtons.forEach(btn => btn.addEventListener('click', () => filterAnomalias(btn.dataset.category)));
@@ -966,6 +1048,59 @@
         return '';
       }
 
+      // ===== Ajuste dinâmico de FACE + exibir Sentido da Pista =====
+      const baseFaceOptions = Array.from(faceSelect.options).map(o=>({value:o.value,text:o.textContent}));
+      function setFaceOptions(opts){
+        faceSelect.innerHTML = '';
+        const na = document.createElement('option'); na.value=''; na.textContent='N/A';
+        faceSelect.appendChild(na);
+        opts.forEach(t=>{
+          const o=document.createElement('option'); o.value=t; o.textContent=t; faceSelect.appendChild(o);
+        });
+      }
+      function restoreBaseFaceOptions(){
+        faceSelect.innerHTML = '';
+        baseFaceOptions.forEach(o=>{
+          const opt = document.createElement('option');
+          opt.value = o.value; opt.textContent = o.text;
+          faceSelect.appendChild(opt);
+        });
+      }
+      function isElementoDePista(nome){
+        return ['Pista','Pavimento flexível','Pavimento rígido'].includes(nome);
+      }
+      function refreshFaceAndSentido(){
+        const nome = registroFields.elemento.value || '';
+        if (isElementoDePista(nome)) {
+          setFaceOptions(['Aproximação Leste','Aproximação Oeste','Aproximação Norte','Aproximação Sul']);
+          sentidoPistaGroup.classList.remove('hidden');
+        } else {
+          restoreBaseFaceOptions();
+          sentidoPistaGroup.classList.add('hidden');
+          registroFields.sentido_pista.value = '';
+        }
+      }
+      registroFields.elemento.addEventListener('change', ()=>{
+        refreshFaceAndSentido();
+      });
+
+      // ====== Regras de obrigatoriedade de "Abertura" ======
+      function requiresAbertura(text){
+        if (!text) return false;
+        const t = text.toLowerCase();
+        return t.includes('fissur') || t.includes('trinca');
+      }
+      function updateAberturaRequirement(){
+        const opt = anomaliaSelect.options[anomaliaSelect.selectedIndex];
+        const text = opt ? opt.textContent : '';
+        const need = requiresAbertura(text);
+        aberturaSelect.required = need;
+        aberturaHint.style.display = need ? 'block' : 'none';
+        aberturaLabelHint.style.display = need ? 'inline' : 'none';
+        if (!need) aberturaSelect.value = '';
+      }
+      anomaliaSelect.addEventListener('change', updateAberturaRequirement);
+
       const loadRegistros = (registros=[]) => {
         registrosList.innerHTML = '';
         if (registros.length === 0) {
@@ -973,7 +1108,10 @@
           return;
         }
         registros.slice().reverse().forEach(registro => {
-          const fotoFinal = parseInt(registro.fotoInicial) + parseInt(registro.qtdFotos) - 1;
+          const fi = parseInt(registro.fotoInicial) || 0;
+          const qf = parseInt(registro.qtdFotos) || 0;
+          const fotoFinal = (fi && qf) ? (fi + qf - 1) : '';
+
           const nome = resolveElementoNome(registro);
           const sigla = resolveElementoSigla(registro);
           const item = document.createElement('div');
@@ -987,8 +1125,9 @@
                 <button class="btn btn-secondary" onclick="deleteRegistro('${registro.id}')">🗑️</button>
               </div>
             </div>
+            ${registro.sentido_pista ? `<p><strong>Sentido da pista:</strong> ${registro.sentido_pista}</p>` : ''}
             <p><strong>Anomalia:</strong> ${registro.anomalia}</p>
-            <p><strong>Fotos (${registro.tipo_foto}):</strong> ${registro.fotoInicial} a ${fotoFinal}</p>
+            <p><strong>Fotos (${registro.tipo_foto}):</strong> ${registro.fotoInicial}${fotoFinal ? ` a ${fotoFinal}` : ''}</p>
           `;
           registrosList.appendChild(item);
         });
@@ -1020,19 +1159,23 @@
         if (!record) return;
 
         filterAnomalias('todos');
+        anomaliaFilterInput.value = '';
+        applyAnomaliaFilters();
 
-        // Elemento (seleciona por nome)
+        // Elemento
         const nome = resolveElementoNome(record);
         registroFields.elemento.value = nome;
+        refreshFaceAndSentido();
 
         // Campos simples
-        ['numero_elemento','face','vao','vista','comprimento','largura','abertura','observacoes'].forEach(k => {
+        ['numero_elemento','face','vao','vista','comprimento','largura','abertura','observacoes','sentido_pista'].forEach(k => {
           if (record[k] !== undefined && registroFields[k]) registroFields[k].value = record[k];
         });
 
         // Anomalia (usa texto como no select)
         const opt = Array.from(anomaliaSelect.options).find(o => o.textContent === record.anomalia);
         anomaliaSelect.value = opt ? opt.value : '';
+        updateAberturaRequirement();
 
         // Fotos
         tipoFotoSelect.value = record.tipo_foto;
@@ -1077,7 +1220,10 @@
           fotoInicialCameraInput.value = inspecao.contadores.camera;
           fotoInicialDroneInput.value = inspecao.contadores.drone;
         }
-        toggleContadorInputs();
+        restoreBaseFaceOptions();
+        sentidoPistaGroup.classList.add('hidden');
+        updatePhotoInfo();
+        updateAberturaRequirement();
       });
 
       inspecaoAtivaSelect.addEventListener('change', () => { saveActiveInspecaoData(); setActiveInspecao(inspecaoAtivaSelect.value); });
@@ -1139,9 +1285,13 @@
         );
       });
 
-      copyCoordsBtn.addEventListener('click', () => {
-        coordsForCopyInput.select();
-        document.execCommand('copy');
+      copyCoordsBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(coordsForCopyInput.value || '');
+        } catch {
+          coordsForCopyInput.select();
+          document.execCommand('copy');
+        }
         alert('Coordenadas copiadas para a área de transferência!');
       });
 
@@ -1174,6 +1324,16 @@
         e.preventDefault();
         if (!appState.activeInspecaoId) { alert("Nenhuma inspeção ativa. Crie ou selecione uma inspeção primeiro."); return; }
         saveActiveInspecaoData();
+
+        // Verifica obrigatoriedade de abertura
+        const anomaliaOpt = anomaliaSelect.options[anomaliaSelect.selectedIndex];
+        const anomaliaText = anomaliaOpt ? anomaliaOpt.textContent : '';
+        if (requiresAbertura(anomaliaText) && !aberturaSelect.value) {
+          alert('Informe a ABERTURA de fissuras/trincas.');
+          aberturaSelect.focus();
+          return;
+        }
+
         const inspecao = appState.db[appState.activeInspecaoId];
 
         const formData = new FormData(inspectionForm);
@@ -1220,10 +1380,12 @@
 
           // Atualiza contador de fotos
           const tipoFoto = newRecordData.tipo_foto;
-          const novoContador = parseInt(newRecordData.fotoInicial) + parseInt(newRecordData.qtdFotos);
-          inspecao.contadores[tipoFoto] = novoContador;
-          if (tipoFoto === 'camera') fotoInicialCameraInput.value = novoContador;
-          else fotoInicialDroneInput.value = novoContador;
+          const base = parseInt(newRecordData.fotoInicial) || 0;
+          const qtd  = parseInt(newRecordData.qtdFotos) || 0;
+          const novoContador = base + qtd;
+          inspecao.contadores[tipoFoto] = novoContador || 1;
+          if (tipoFoto === 'camera') fotoInicialCameraInput.value = inspecao.contadores.camera;
+          else fotoInicialDroneInput.value = inspecao.contadores.drone;
 
           alert('Registro salvo com sucesso!');
         }
@@ -1231,15 +1393,18 @@
         saveDb();
 
         // Limpa campos de registro (mantém select de elementos)
-        ['numero_elemento','face','vao','vista','comprimento','largura','abertura','observacoes'].forEach(k=>{
+        ['numero_elemento','face','vao','vista','comprimento','largura','abertura','observacoes','sentido_pista'].forEach(k=>{
           if (registroFields[k]) registroFields[k].value = '';
         });
         registroFields.elemento.value = ''; // limpa escolha do elemento
+        restoreBaseFaceOptions();
+        sentidoPistaGroup.classList.add('hidden');
         updatePhotoInfo();
         loadRegistros(inspecao.registros);
+        updateAberturaRequirement();
       });
 
-      // Exportação (3 abas). Registros agora têm 2 colunas de elemento
+      // Exportação
       exportButton.addEventListener('click', ()=>{
         if (!appState.activeInspecaoId) { alert("Nenhuma inspeção ativa para exportar."); return; }
         const inspecao = appState.db[appState.activeInspecaoId];
@@ -1282,14 +1447,16 @@
         ]];
         const wsCaracteristicas = XLSX.utils.aoa_to_sheet([caracteristicasHeaders, ...caracteristicasData]);
 
-        // 3. Registros (com Elemento por extenso + Sigla)
+        // 3. Registros
         const registrosHeaders = [
-          'ID','Elemento (por extenso)','Sigla','Número do Elemento','Face','Vão','Vista','Anomalia',
+          'ID','Elemento (por extenso)','Sigla','Número do Elemento','Face','Vão','Vista','Sentido da pista','Anomalia',
           'Comprimento (m)','Largura (m)','Abertura Fissura','Tipo de Foto',
           'Foto Inicial','Foto Final','Qtd Fotos','Observações'
         ];
         const registrosData = registros.map(r=>{
-          const fotoFinal = parseInt(r.fotoInicial) + parseInt(r.qtdFotos) - 1;
+          const fi = parseInt(r.fotoInicial) || 0;
+          const qf = parseInt(r.qtdFotos) || 0;
+          const fotoFinal = (fi && qf) ? (fi + qf - 1) : '';
           const elNome = resolveElementoNome(r) || '';
           const elSigla = resolveElementoSigla(r) || '';
           return [
@@ -1300,6 +1467,7 @@
             r.face || '',
             r.vao || '',
             r.vista || '',
+            r.sentido_pista || '',
             r.anomalia || '',
             r.comprimento || '',
             r.largura || '',
@@ -1420,6 +1588,9 @@
         const firstId = Object.keys(appState.db)[0] || null;
         if (firstId) inspecaoAtivaSelect.value = firstId;
         setActiveInspecao(firstId);
+        // Inicializa filtros
+        applyAnomaliaFilters();
+        updateAberturaRequirement();
       };
       initApp();
 
@@ -1465,172 +1636,6 @@
     window.addEventListener('online',  ()=>{ const i=document.getElementById('offlineIndicator'); if(i) i.style.display='none'; });
     window.addEventListener('offline', ()=>{ const i=document.getElementById('offlineIndicator'); if(i) i.style.display='block'; });
     checkOfflineStatus();
-  </script>
-
-  <!-- ===== MODAL DO ASSISTENTE IA ===== -->
-  <div id="aiModal" class="modal" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
-      <div class="modal-header">
-        <h2 id="aiTitle">Assistente de IA — Inspeção OAE</h2>
-        <span class="close-button" id="closeAiModal" title="Fechar">&times;</span>
-      </div>
-
-      <div id="aiToolbar">
-        <span class="chip" data-template="obs">✍️ Gerar observação</span>
-        <span class="chip" data-template="diag">🧪 Diagnóstico curto</span>
-        <span class="chip" data-template="sug">🧠 Plano de ação</span>
-        <span class="chip" data-template="sum">📋 Resumo técnico</span>
-      </div>
-
-      <textarea id="aiPrompt" rows="5" placeholder="Escreva sua pergunta ou use os atalhos acima..."></textarea>
-      <div class="row-actions">
-        <button id="askAiBtn" class="btn-primary-mini">Perguntar com contexto</button>
-        <button id="pasteAiBtn" class="btn-ghost">📝 Inserir em Observações</button>
-        <button id="copyAiBtn" class="btn-ghost">📋 Copiar</button>
-        <span id="aiOnlineHint" class="small" style="margin-left:auto;"></span>
-      </div>
-
-      <div id="aiOutput" aria-live="polite"></div>
-      <div class="small">O contexto é coletado automaticamente de “Dados Gerais”, “Características” e do registro atual. Se estiver offline, a IA fica desativada.</div>
-    </div>
-  </div>
-
-  <!-- ===== Integração com IA (UI local; sua API própria em /api/ia) ===== -->
-  <script>
-    (function(){
-      const aiModal = document.getElementById('aiModal');
-      const openAiBtn = document.getElementById('openAiBtn');
-      const openAiFromObs = document.getElementById('openAiFromObs');
-      const closeAiModal = document.getElementById('closeAiModal');
-      const aiPrompt = document.getElementById('aiPrompt');
-      const aiOutput = document.getElementById('aiOutput');
-      const askAiBtn = document.getElementById('askAiBtn');
-      const copyAiBtn = document.getElementById('copyAiBtn');
-      const pasteAiBtn = document.getElementById('pasteAiBtn');
-      const aiOnlineHint = document.getElementById('aiOnlineHint');
-
-      const openModal=(prefill='')=>{ aiPrompt.value=prefill; aiOutput.textContent=''; aiModal.style.display='block'; aiModal.setAttribute('aria-hidden','false'); updateOnlineHint(); toggleAskDisabled(); };
-      const closeModal=()=>{ aiModal.style.display='none'; aiModal.setAttribute('aria-hidden','true'); };
-      openAiBtn && openAiBtn.addEventListener('click', ()=>openModal(''));
-      openAiFromObs && openAiFromObs.addEventListener('click', ()=>openModal('Gerar uma OBSERVAÇÃO técnica (3–6 linhas) com base nos campos preenchidos.'));
-      closeAiModal && closeAiModal.addEventListener('click', closeModal);
-      aiModal && aiModal.addEventListener('click', (e)=>{ if(e.target===aiModal) closeModal(); });
-
-      document.querySelectorAll('#aiToolbar .chip').forEach(chip=>{
-        chip.addEventListener('click', ()=>{
-          const t = chip.getAttribute('data-template');
-          let txt='';
-          if (t==='obs') txt='Gerar OBSERVAÇÃO técnica (3–6 linhas) considerando: elemento/vão/face/vista, anomalia, severidade (se houver), causa provável e recomendação curta.';
-          else if (t==='diag') txt='Produzir DIAGNÓSTICO curto (4–8 linhas) descrevendo o quadro e possíveis implicações estruturais, de acordo com a anomalia.';
-          else if (t==='sug') txt='Sugerir um PLANO DE AÇÃO objetivo (monitorar / corrigir / intervenção) e justificar em 2–3 pontos.';
-          else if (t==='sum') txt='Escrever um RESUMO técnico (até 8 linhas) consolidando dados gerais, características e registro atual.';
-          aiPrompt.value = txt;
-        });
-      });
-
-      function updateOnlineHint(){ aiOnlineHint.textContent = navigator.onLine ? '🟢 Online' : '🔴 Offline'; }
-      function toggleAskDisabled(){ askAiBtn.disabled = !navigator.onLine; askAiBtn.title = navigator.onLine ? '' : 'Sem conexão. A IA exige internet.'; }
-      window.addEventListener('online', ()=>{ updateOnlineHint(); toggleAskDisabled(); });
-      window.addEventListener('offline',()=>{ updateOnlineHint(); toggleAskDisabled(); });
-
-      function v(id){ const el=document.getElementById(id); return el ? (el.value||'') : ''; }
-
-      function coletarContexto(){
-        const dadosGerais = {
-          concessionaria:v('concessionaria'), rodovia:v('rodovia'), km:v('km'),
-          nome_obra:v('nome_obra'), sentido:v('sentido'), data:v('data'),
-          inspetor:v('inspetor'), latitude:v('latitude'), longitude:v('longitude')
-        };
-        const caracteristicas = {
-          comprimento_total:v('comprimento_total'), largura_total:v('largura_total'), largura_util:v('largura_util'),
-          sentido_crescente:v('sentido_crescente'), qtd_vaos:v('qtd_vaos'), pilares:v('pilares'),
-          juntas_dilatacao:v('juntas_dilatacao'), vaos_tipo:v('vaos_tipo'), tabuleiro_tipo:v('tabuleiro_tipo'),
-          tipologia_longitudinal:v('tipologia_longitudinal'), tipologia_transversal:v('tipologia_transversal'),
-          tipologia_mesoestrutura:v('tipologia_mesoestrutura'), tipologia_infraestrutura:v('tipologia_infraestrutura'),
-          sistemas_construtivos:v('sistemas_construtivos'), natureza_transposicao:v('natureza_transposicao'),
-          materiais:v('materiais'), qtd_aparelhos_apoio:v('qtd_aparelhos_apoio'),
-          gabarito_vertical_sob:v('gabarito_vertical_sob'), gabarito_vertical_sobre:v('gabarito_vertical_sobre'),
-          gabarito_navegavel_altura:v('gabarito_navegavel_altura'), gabarito_navegavel_largura:v('gabarito_navegavel_largura')
-        };
-
-        const elemento_nome = v('elemento');
-        const elemento_sigla = (function(){
-          const sel = document.getElementById('elemento');
-          const opt = sel ? sel.options[sel.selectedIndex] : null;
-          return opt ? (opt.dataset.sigla || '') : (SIGLA_POR_NOME[elemento_nome] || '');
-        })();
-
-        const registroAtual = {
-          elemento_nome, elemento_sigla,
-          numero_elemento:v('numero_elemento'), vao:v('vao'), face:v('face'), vista:v('vista'),
-          anomalia:(function(){ const sel=document.getElementById('anomalia'); const opt=sel?sel.options[sel.selectedIndex]:null; return opt?opt.textContent:''; })(),
-          comprimento:v('comprimento'), largura:v('largura'), abertura:v('abertura'),
-          tipo_foto:v('tipo_foto'), qtd_fotos:v('qtdFotos'), foto_inicial:v('fotoInicial'),
-          observacoes_digitadas:v('observacoes')
-        };
-
-        let ultimaInspecao=null;
-        try{
-          const db = JSON.parse(localStorage.getItem('OAE_INSPECTIONS_DB')||'{}');
-          const activeId = (document.getElementById('inspecaoAtiva')||{}).value || null;
-          if (activeId && db[activeId]){
-            const regs=db[activeId].registros||[];
-            ultimaInspecao={ id:activeId, contadores:db[activeId].contadores||{}, total_registros:regs.length, ultimos_registros:regs.slice(-5) };
-          }
-        }catch(e){}
-
-        return { dadosGerais, caracteristicas, registroAtual, ultimaInspecao };
-      }
-
-      askAiBtn.addEventListener('click', async ()=>{
-        if (!navigator.onLine) { alert('Você está offline. A IA precisa de internet.'); return; }
-        const prompt = (document.getElementById('aiPrompt').value||'').trim();
-        if (!prompt) { alert('Escreva sua pergunta ou use um atalho.'); return; }
-
-        aiOutput.textContent = '⏳ Processando...';
-        const contexto = coletarContexto();
-
-        const systemPrompt = `
-Você é um assistente técnico de inspeções de OAEs no Brasil.
-- Estilo: objetivo, técnico e claro; 3–8 linhas quando não especificado.
-- Não invente normas/valores; evite marcas.
-- Ao gerar "observações", considere: localização (elemento/vão/face/vista), anomalia, severidade quando houver, causa provável e recomendação curta.
-- Se contexto estiver incompleto, diga educadamente o que falta.
-`.trim();
-
-        try{
-          const res = await fetch('/api/ia', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ system: systemPrompt, prompt, context: contexto })
-          });
-          if (!res.ok || !res.body) { aiOutput.textContent='❌ Erro ao chamar /api/ia'; return; }
-          const reader = res.body.getReader(); aiOutput.textContent='';
-          const decoder = new TextDecoder();
-          while(true){
-            const {value, done} = await reader.read();
-            if (done) break;
-            aiOutput.textContent += decoder.decode(value, {stream:true});
-          }
-        }catch(err){
-          console.error(err);
-          aiOutput.textContent = '❌ Falha de conexão com o servidor de IA.';
-        }
-      });
-
-      copyAiBtn.addEventListener('click', async ()=>{
-        try { await navigator.clipboard.writeText(aiOutput.textContent||''); alert('Resposta copiada!'); }
-        catch(e){ alert('Não foi possível copiar.'); }
-      });
-      pasteAiBtn.addEventListener('click', ()=>{
-        const out = aiOutput.textContent||'';
-        const obs = document.getElementById('observacoes');
-        if (!obs) { alert('Campo "Observações" não encontrado.'); return; }
-        if (!out) { alert('Gere uma resposta da IA primeiro.'); return; }
-        obs.value = out; alert('Texto inserido em "Observações".');
-        aiModal.style.display='none'; aiModal.setAttribute('aria-hidden','true');
-      });
-    })();
   </script>
 </body>
 </html>
